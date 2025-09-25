@@ -416,6 +416,15 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      log_user_activity: {
+        Args: {
+          p_action: string
+          p_branch_id?: string
+          p_details?: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
       update_stock_quantity: {
         Args: {
           p_item_id: string

@@ -485,9 +485,21 @@ const Analytics = () => {
       {/* Usage Comparison Chart */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Stock Usage Comparison ({timePeriod.charAt(0).toUpperCase() + timePeriod.slice(1)})
+          <CardTitle className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Stock Usage Comparison ({timePeriod.charAt(0).toUpperCase() + timePeriod.slice(1)})
+            </div>
+            <Select value={timePeriod} onValueChange={setTimePeriod}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50">
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -122,8 +122,11 @@ const Reports = () => {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', userIds);
-          if (profilesError) throw profilesError;
-          profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+          if (profilesError) {
+            console.warn('Could not fetch profiles:', profilesError);
+          } else {
+            profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+          }
         }
 
         const movementData: MovementReport[] = movements.map((movement) => ({
