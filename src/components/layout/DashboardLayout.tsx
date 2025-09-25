@@ -6,7 +6,7 @@ import { AppSidebar } from './AppSidebar';
 import { Loader2, Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DynamicHeader } from '@/components/DynamicHeader';
+import { SlideshowHeader } from '@/components/SlideshowHeader';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -54,7 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <SidebarTrigger />
-              <DynamicHeader />
+              <SlideshowHeader />
             </div>
             
             <div className="flex items-center gap-2 md:gap-4">
