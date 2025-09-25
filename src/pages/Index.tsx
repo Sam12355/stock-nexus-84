@@ -400,7 +400,13 @@ const Index = () => {
   }
 
   return (
-    <div className={`space-y-6 transition-all duration-300 ${showBranchSelection ? 'blur-sm pointer-events-none' : ''}`}>
+    <>
+      {/* Full-screen blur overlay for branch selection */}
+      {showBranchSelection && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40" />
+      )}
+      
+      <div className="space-y-6">
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -412,12 +418,10 @@ const Index = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Activity className="h-4 w-4" />
           Today: {new Date().toLocaleDateString()}
-          {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && (
-            <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
-              <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
-            </Button>
-          )}
-          {(extendedProfile?.role === 'manager' || extendedProfile?.role === 'assistant_manager') && (
+          {(extendedProfile?.role === 'regional_manager' || 
+            extendedProfile?.role === 'district_manager' || 
+            extendedProfile?.role === 'manager' || 
+            extendedProfile?.role === 'assistant_manager') && (
             <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
               <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
             </Button>
@@ -856,7 +860,8 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 };
 
