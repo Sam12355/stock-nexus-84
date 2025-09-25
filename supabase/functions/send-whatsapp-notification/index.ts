@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Twilio configuration
+const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+const TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'; // Twilio Sandbox number
+
 interface WhatsAppNotificationRequest {
   phoneNumber: string;
   message: string;
@@ -46,26 +51,61 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Phone number and message are required');
     }
 
-    console.log('=== MOCK WHATSAPP NOTIFICATION ===');
-    console.log('To:', phoneNumber);
+    // Validate Twilio credentials
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+      throw new Error('Twilio credentials not configured');
+    }
+
+    // Format phone number for WhatsApp (ensure it starts with whatsapp:)
+    const formattedPhoneNumber = phoneNumber.startsWith('whatsapp:') 
+      ? phoneNumber 
+      : `whatsapp:${phoneNumber}`;
+
+    // Prepare Twilio API request
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    
+    const formData = new URLSearchParams();
+    formData.append('From', TWILIO_WHATSAPP_FROM);
+    formData.append('To', formattedPhoneNumber);
+    formData.append('Body', message);
+
+    // Create authorization header
+    const credentials = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+    
+    console.log('=== SENDING WHATSAPP NOTIFICATION VIA TWILIO ===');
+    console.log('To:', formattedPhoneNumber);
+    console.log('From:', TWILIO_WHATSAPP_FROM);
     console.log('Type:', type);
     console.log('Message:', message);
+
+    // Send message via Twilio
+    const twilioResponse = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    const twilioResult = await twilioResponse.json();
     
-    if (type === 'stock_alert' && itemName) {
-      console.log('Item:', itemName);
-      console.log('Current Quantity:', currentQuantity);
-      console.log('Threshold:', thresholdLevel);
+    if (!twilioResponse.ok) {
+      console.error('Twilio API Error:', twilioResult);
+      throw new Error(`Twilio API Error: ${twilioResult.message || 'Unknown error'}`);
     }
-    
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('=====================================');
+
+    console.log('Twilio Response:', twilioResult);
+    console.log('Message SID:', twilioResult.sid);
+    console.log('Status:', twilioResult.status);
+    console.log('===============================================');
 
     // Store notification record for tracking
     const { error: dbError } = await supabase.from('notifications').insert({
       recipient: phoneNumber,
       message: message,
       type: type,
-      status: 'sent', // Mock as sent for testing
+      status: twilioResult.status || 'sent',
       subject: type === 'stock_alert' ? `Stock Alert: ${itemName}` : 'Notification',
       branch_id: null, // Will be set based on user's branch context
       sent_at: new Date().toISOString(),
@@ -76,18 +116,17 @@ const handler = async (req: Request): Promise<Response> => {
       // Don't fail the request for logging errors
     }
 
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     const response = {
       success: true,
-      message: 'WhatsApp notification sent successfully (MOCK)',
+      message: 'WhatsApp notification sent successfully via Twilio',
       details: {
-        recipient: phoneNumber,
+        recipient: formattedPhoneNumber,
         type: type,
         sentAt: new Date().toISOString(),
         messagePreview: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
-        service: 'MOCK_WHATSAPP_API'
+        service: 'TWILIO_WHATSAPP_API',
+        messageSid: twilioResult.sid,
+        status: twilioResult.status
       }
     };
 
