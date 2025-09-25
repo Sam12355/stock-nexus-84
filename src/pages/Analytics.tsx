@@ -94,7 +94,7 @@ const Analytics = () => {
 
       // Filter movements for current branch
       const branchMovements = (movementsData || []).filter(movement => 
-        movement.items?.branch_id === branchId
+        movement.items?.[0]?.branch_id === branchId
       );
 
       const totalMovements = branchMovements.length;
@@ -116,7 +116,7 @@ const Analytics = () => {
       // Top performing items
       const itemMovementCount: { [key: string]: number } = {};
       branchMovements.forEach(movement => {
-        const itemName = movement.items?.name;
+        const itemName = movement.items?.[0]?.name;
         if (itemName) {
           itemMovementCount[itemName] = (itemMovementCount[itemName] || 0) + 1;
         }

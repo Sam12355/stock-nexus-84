@@ -70,7 +70,7 @@ const ActivityLogs = () => {
 
       // Filter movements for current branch
       const branchMovements = (movementsData || []).filter(movement => 
-        movement.items?.branch_id === branchId
+        movement.items?.[0]?.branch_id === branchId
       );
 
       // Get activity logs
@@ -92,8 +92,8 @@ const ActivityLogs = () => {
           formattedActivities.push({
             id: `movement-${movement.id}`,
             action: movement.movement_type === 'in' ? 'Stock In' : 'Stock Out',
-            user_name: movement.profiles?.name || 'Unknown User',
-            item_name: movement.items?.name || 'Unknown Item',
+            user_name: movement.profiles?.[0]?.name || 'Unknown User',
+            item_name: movement.items?.[0]?.name || 'Unknown Item',
             quantity: movement.quantity,
             timestamp: movement.created_at,
             type: movement.movement_type === 'in' ? 'stock_in' : 'stock_out',
