@@ -151,37 +151,50 @@ const Stock = () => {
       alertType = 'low';
     }
 
-    if (alertType) {
+    if (alertType && profile?.phone) {
       try {
-        console.log('Sending stock alert:', {
+        // Prepare WhatsApp message (same format as the edge function)
+        const urgencyText = alertType === 'critical' ? '🚨 CRITICAL' : '⚠️ LOW STOCK';
+        const message = `${urgencyText} ALERT
+
+📦 Item: ${item.items.name}
+📊 Current: ${newQuantity} units
+📋 Threshold: ${threshold} units
+
+${alertType === 'critical' 
+  ? '⚡ URGENT: Immediate restocking required!' 
+  : '📈 Action needed: Please consider restocking soon.'
+}
+
+Time: ${new Date().toLocaleString()}`;
+
+        console.log('Sending stock alert via WhatsApp:', {
           itemName: item.items.name,
           currentQuantity: newQuantity,
           thresholdLevel: threshold,
-          alertType,
-          branchId: item.items.branch_id
+          alertType
         });
 
-        const { data, error } = await supabase.functions.invoke('send-stock-alert', {
+        // Use the same direct method that works in Settings
+        const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
           body: {
-            itemName: item.items.name,
-            currentQuantity: newQuantity,
-            thresholdLevel: threshold,
-            alertType,
-            branchId: item.items.branch_id
+            phoneNumber: profile.phone,
+            message: message,
+            type: 'whatsapp'
           }
         });
 
         if (error) {
-          console.error('Stock alert failed:', error);
+          console.error('Stock alert WhatsApp failed:', error);
         } else {
-          console.log('Stock alert sent successfully:', data);
+          console.log('Stock alert WhatsApp sent successfully:', data);
           toast({
             title: "Stock Alert Sent",
             description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent via WhatsApp`,
           });
         }
       } catch (error) {
-        console.error('Error sending stock alert:', error);
+        console.error('Error sending stock alert WhatsApp:', error);
       }
     }
   };
