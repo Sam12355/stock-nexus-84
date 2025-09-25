@@ -32,7 +32,7 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
-    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
   },
   {
     title: "Manage Staff",
@@ -44,29 +44,29 @@ const menuItems = [
     title: "Manage Items",
     url: "/items",
     icon: Package2,
-    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Manage Stock",
     url: "/stock",
     icon: Package,
-    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
   },
   {
     title: "Reports",
     url: "/reports",
     icon: FileText,
-    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
-    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Activity Logs",
-    url: "/activity",
+    url: "/activity-logs",
     icon: ClipboardList,
     roles: ['admin', 'regional_manager', 'district_manager', 'manager']
   }
