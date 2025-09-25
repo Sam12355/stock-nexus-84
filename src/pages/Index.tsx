@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import Select2 from "react-select";
 import { 
   Package, 
   Users, 
@@ -108,7 +109,7 @@ const Index = () => {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
   const hasFetchedWeatherRef = useRef(false);
   const [branches, setBranches] = useState<any[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [selectedBranchOption, setSelectedBranchOption] = useState<{value: string, label: string} | null>(null);
   const [showBranchSelection, setShowBranchSelection] = useState(false);
 
   const fetchBranchesData = async () => {
@@ -284,7 +285,7 @@ const Index = () => {
     // Determine branch ID based on user role
     let branchId: string | null = null;
     if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
-      if (!selectedBranchId && !extendedProfile?.branch_context) {
+      if (!selectedBranchOption?.value && !extendedProfile?.branch_context) {
         toast({
           title: "Branch is required",
           description: "Please select a branch for this event.",
@@ -292,7 +293,7 @@ const Index = () => {
         });
         return;
       }
-      branchId = selectedBranchId || extendedProfile?.branch_context || null;
+      branchId = selectedBranchOption?.value || extendedProfile?.branch_context || null;
     } else {
       // For managers, use their assigned branch
       if (!extendedProfile?.branch_id) {
@@ -327,7 +328,7 @@ const Index = () => {
       // Refresh events
       fetchDashboardData();
       setShowEventModal(false);
-      setSelectedBranchId(''); // Reset branch selection
+      setSelectedBranchOption(null); // Reset branch selection
       setNewEvent({
         title: '',
         description: '',
@@ -344,11 +345,13 @@ const Index = () => {
     }
   };
 
-  const handleBranchSelection = async (branchId: string) => {
+  const handleBranchSelection = async (selectedOption: {value: string, label: string} | null) => {
+    if (!selectedOption) return;
+    
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ branch_context: branchId })
+        .update({ branch_context: selectedOption.value })
         .eq('user_id', extendedProfile?.user_id);
 
       if (error) throw error;
@@ -675,22 +678,58 @@ const Index = () => {
                   Loading branches...
                 </div>
               ) : (
-                <div className="grid gap-2 mt-2 max-h-60 overflow-y-auto">
-                  {branches.map((branch) => (
-                    <Button
-                      key={branch.id}
-                      variant="outline"
-                      onClick={() => handleBranchSelection(branch.id)}
-                      className="justify-start p-4 h-auto"
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">{branch.name}</div>
-                        {branch.location && (
-                          <div className="text-xs text-muted-foreground">{branch.location}</div>
-                        )}
-                      </div>
-                    </Button>
-                  ))}
+                <div className="mt-2">
+                  <Select2
+                    options={branches.map(branch => ({
+                      value: branch.id,
+                      label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
+                    }))}
+                    onChange={handleBranchSelection}
+                    placeholder="Select a branch..."
+                    isClearable={false}
+                    isSearchable={true}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    styles={{
+                      control: (provided) => ({
+                        ...provided,
+                        backgroundColor: 'hsl(var(--background))',
+                        borderColor: 'hsl(var(--border))',
+                        color: 'hsl(var(--foreground))',
+                        minHeight: '44px',
+                        fontSize: '14px'
+                      }),
+                      menu: (provided) => ({
+                        ...provided,
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        zIndex: 9999
+                      }),
+                      option: (provided, state) => ({
+                        ...provided,
+                        backgroundColor: state.isSelected 
+                          ? 'hsl(var(--accent))' 
+                          : state.isFocused 
+                          ? 'hsl(var(--accent) / 0.5)' 
+                          : 'transparent',
+                        color: 'hsl(var(--popover-foreground))',
+                        padding: '12px 16px'
+                      }),
+                      singleValue: (provided) => ({
+                        ...provided,
+                        color: 'hsl(var(--foreground))'
+                      }),
+                      placeholder: (provided) => ({
+                        ...provided,
+                        color: 'hsl(var(--muted-foreground))'
+                      }),
+                      input: (provided) => ({
+                        ...provided,
+                        color: 'hsl(var(--foreground))'
+                      })
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -711,18 +750,58 @@ const Index = () => {
             {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context && (
               <div>
                 <Label htmlFor="event-branch">Branch *</Label>
-                <Select onValueChange={setSelectedBranchId} value={selectedBranchId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a branch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Select2
+                  options={branches.map(branch => ({
+                    value: branch.id,
+                    label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
+                  }))}
+                  onChange={setSelectedBranchOption}
+                  value={selectedBranchOption}
+                  placeholder="Select a branch..."
+                  isClearable={false}
+                  isSearchable={true}
+                  className="react-select-container mt-1"
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (provided) => ({
+                      ...provided,
+                      backgroundColor: 'hsl(var(--background))',
+                      borderColor: 'hsl(var(--border))',
+                      color: 'hsl(var(--foreground))',
+                      minHeight: '40px',
+                      fontSize: '14px'
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      zIndex: 9999
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isSelected 
+                        ? 'hsl(var(--accent))' 
+                        : state.isFocused 
+                        ? 'hsl(var(--accent) / 0.5)' 
+                        : 'transparent',
+                      color: 'hsl(var(--popover-foreground))',
+                      padding: '8px 12px'
+                    }),
+                    singleValue: (provided) => ({
+                      ...provided,
+                      color: 'hsl(var(--foreground))'
+                    }),
+                    placeholder: (provided) => ({
+                      ...provided,
+                      color: 'hsl(var(--muted-foreground))'
+                    }),
+                    input: (provided) => ({
+                      ...provided,
+                      color: 'hsl(var(--foreground))'
+                    })
+                  }}
+                />
               </div>
             )}
             <div>

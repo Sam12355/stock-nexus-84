@@ -141,6 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Clear branch_context before signing out
+      if (user?.id) {
+        await supabase
+          .from('profiles')
+          .update({ branch_context: null })
+          .eq('user_id', user.id);
+      }
+      
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
