@@ -149,7 +149,7 @@ const Items = () => {
         storage_temperature: formData.storage_temperature ? parseFloat(formData.storage_temperature) : null,
         threshold_level: parseInt(formData.threshold_level),
         branch_id: profile?.role === 'admin' ? selectedBranchId : profile?.branch_id,
-        created_by: profile?.user_id
+        created_by: profile?.id
       };
 
       if (selectedItem) {
