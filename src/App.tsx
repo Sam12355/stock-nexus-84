@@ -12,6 +12,8 @@ import Stock from "./pages/Stock";
 import Reports from "./pages/Reports";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
+import ActivityLogs from "./pages/ActivityLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,16 @@ const App = () => (
             <Route path="/settings" element={
               <DashboardLayout>
                 <Settings />
+              </DashboardLayout>
+            } />
+            <Route path="/analytics" element={
+              <DashboardLayout>
+                <Analytics />
+              </DashboardLayout>
+            } />
+            <Route path="/activity" element={
+              <DashboardLayout>
+                <ActivityLogs />
               </DashboardLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

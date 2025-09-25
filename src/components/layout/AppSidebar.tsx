@@ -51,6 +51,12 @@ const menuItems = [
     roles: ['admin', 'manager', 'assistant_manager', 'staff']
   },
   {
+    title: "Reports",
+    url: "/reports",
+    icon: BarChart3,
+    roles: ['admin', 'manager', 'assistant_manager']
+  },
+  {
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
@@ -143,8 +149,8 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/profile"
-                      className={`sidebar-nav-item ${isActive('/profile') ? 'active' : ''}`}
+                      to="/settings"
+                      className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`}
                     >
                       <Settings className="h-4 w-4" />
                       {!isCollapsed && <span>Settings</span>}
