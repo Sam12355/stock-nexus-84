@@ -57,6 +57,7 @@ const Stock = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [quickActionItem, setQuickActionItem] = useState<StockItem | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'low' | 'critical'>('all');
 
   const fetchStockData = async () => {
     try {
@@ -193,22 +194,35 @@ const Stock = () => {
     return <div className="flex justify-center items-center h-64">Loading stock data...</div>;
   }
 
-  const lowStockItems = stockItems.filter(item => 
-    item.current_quantity <= item.items.threshold_level
-  );
-  
-  // Filter items based on search term
-  const filteredStockItems = stockItems.filter(item =>
-    item.items.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.items.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  // Filter items based on critical vs low stock - mutually exclusive
   const criticalStockItems = stockItems.filter(item => 
     item.current_quantity <= item.items.threshold_level * 0.5
   );
 
-  // Prepare options for react-select
-  const selectOptions = filteredStockItems.map(item => ({
+  const lowStockItems = stockItems.filter(item => 
+    item.current_quantity > item.items.threshold_level * 0.5 && 
+    item.current_quantity <= item.items.threshold_level
+  );
+  
+  // Filter items based on search term and filter type
+  let displayItems = stockItems;
+  
+  if (filterType === 'low') {
+    displayItems = lowStockItems;
+  } else if (filterType === 'critical') {
+    displayItems = criticalStockItems;
+  }
+  
+  const filteredStockItems = displayItems.filter(item =>
+    item.items.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.items.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Prepare options for react-select (use all items for selection)
+  const selectOptions = stockItems.filter(item =>
+    item.items.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.items.category.toLowerCase().includes(searchTerm.toLowerCase())
+  ).map(item => ({
     value: item.id,
     label: `${item.items.name} (Current: ${item.current_quantity})`,
     item: item
@@ -315,7 +329,7 @@ const Stock = () => {
       
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilterType('all')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -326,7 +340,7 @@ const Stock = () => {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilterType('low')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-500" />
@@ -337,7 +351,7 @@ const Stock = () => {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilterType('critical')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Critical Stock</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -352,11 +366,15 @@ const Stock = () => {
       {/* Stock Items List */}
       <Card>
         <CardHeader>
-          <CardTitle>Current Stock Levels</CardTitle>
+          <CardTitle>
+            {filterType === 'all' ? 'Current Stock Levels' :
+             filterType === 'low' ? 'Low Stock Items' :
+             'Critical Stock Items'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stockItems.map((item) => {
+            {filteredStockItems.map((item) => {
               const status = getStockStatus(item);
               return (
                 <div
@@ -463,9 +481,11 @@ const Stock = () => {
               );
             })}
             
-            {stockItems.length === 0 && (
+            {filteredStockItems.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                No stock items found. Add some items first.
+                {filterType === 'all' ? 'No stock items found. Add some items first.' :
+                 filterType === 'low' ? 'No low stock items found.' :
+                 'No critical stock items found.'}
               </div>
             )}
           </div>
