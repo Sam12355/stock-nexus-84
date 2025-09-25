@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LineChart, PieChart, TrendingUp, Package, Users, AlertTriangle, Activity } from "lucide-react";
+import { BarChart, LineChart, PieChart, TrendingUp, Package, Users, AlertTriangle, Activity, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, LineChart as RechartsLineChart, Line } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AnalyticsData {
   totalItems: number;
@@ -14,10 +15,12 @@ interface AnalyticsData {
   categoryData: Array<{ name: string; value: number; color: string }>;
   movementTrends: Array<{ date: string; in: number; out: number }>;
   topItems: Array<{ name: string; movements: number }>;
+  usageComparison: Array<{ period: string; usage: number; type: string }>;
 }
 
 const Analytics = () => {
   const { profile } = useAuth();
+  const [timePeriod, setTimePeriod] = useState('daily');
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalItems: 0,
     lowStockItems: 0,
@@ -25,7 +28,8 @@ const Analytics = () => {
     stockMovements: 0,
     categoryData: [],
     movementTrends: [],
-    topItems: []
+    topItems: [],
+    usageComparison: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -146,6 +150,9 @@ const Analytics = () => {
         user.last_access && new Date(user.last_access) > oneWeekAgo
       ).length || 0;
 
+      // Fetch usage comparison data based on time period
+      const usageComparison = await fetchUsageComparison(branchId);
+
       setAnalytics({
         totalItems,
         lowStockItems,
@@ -153,7 +160,8 @@ const Analytics = () => {
         stockMovements: totalMovements,
         categoryData,
         movementTrends,
-        topItems
+        topItems,
+        usageComparison
       });
 
     } catch (error) {
@@ -161,18 +169,122 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  }, [profile]);
+  }, [profile, timePeriod]);
+
+  const fetchUsageComparison = useCallback(async (branchId: string) => {
+    try {
+      let dateFormat = '';
+      let periods: string[] = [];
+      const now = new Date();
+      const period = timePeriod;
+      
+      if (period === 'daily') {
+        // Last 7 days
+        dateFormat = 'YYYY-MM-DD';
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          periods.push(date.toISOString().split('T')[0]);
+        }
+      } else if (period === 'monthly') {
+        // Last 6 months
+        dateFormat = 'YYYY-MM';
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now);
+          date.setMonth(date.getMonth() - i);
+          periods.push(date.toISOString().slice(0, 7));
+        }
+      } else if (period === 'yearly') {
+        // Last 3 years
+        dateFormat = 'YYYY';
+        for (let i = 2; i >= 0; i--) {
+          const date = new Date(now);
+          date.setFullYear(date.getFullYear() - i);
+          periods.push(date.getFullYear().toString());
+        }
+      }
+
+      // Fetch stock movements for the time range
+      const startDate = period === 'yearly' 
+        ? `${periods[0]}-01-01` 
+        : period === 'monthly' 
+          ? `${periods[0]}-01` 
+          : periods[0];
+      
+      const { data: movementsData, error } = await supabase
+        .from('stock_movements')
+        .select(`
+          id,
+          movement_type,
+          quantity,
+          created_at,
+          item_id
+        `)
+        .gte('created_at', startDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Filter movements for this branch by checking items
+      const itemIds = Array.from(new Set((movementsData || []).map(m => m.item_id)));
+      const { data: itemsData } = await supabase
+        .from('items')
+        .select('id')
+        .eq('branch_id', branchId)
+        .in('id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+      
+      const branchItemIds = new Set((itemsData || []).map(i => i.id));
+      const branchMovements = (movementsData || []).filter(m => branchItemIds.has(m.item_id));
+
+      // Group by period
+      const usageByPeriod: { [key: string]: number } = {};
+      branchMovements.forEach(movement => {
+        const date = new Date(movement.created_at);
+        let periodKey = '';
+        
+        if (period === 'daily') {
+          periodKey = date.toISOString().split('T')[0];
+        } else if (period === 'monthly') {
+          periodKey = date.toISOString().slice(0, 7);
+        } else if (period === 'yearly') {
+          periodKey = date.getFullYear().toString();
+        }
+        
+        usageByPeriod[periodKey] = (usageByPeriod[periodKey] || 0) + movement.quantity;
+      });
+
+      return periods.map(period => ({
+        period,
+        usage: usageByPeriod[period] || 0,
+        type: timePeriod
+      }));
+
+    } catch (error) {
+      console.error('Error fetching usage comparison:', error);
+      return [];
+    }
+  }, [timePeriod]);
 
   useEffect(() => {
     if (profile) {
       fetchAnalyticsData();
     }
-  }, [profile, fetchAnalyticsData]);
+  }, [profile, fetchAnalyticsData, fetchUsageComparison]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+        <Select value={timePeriod} onValueChange={setTimePeriod}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Daily</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="yearly">Yearly</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       {/* Key Metrics */}
@@ -369,6 +481,57 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Usage Comparison Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Stock Usage Comparison ({timePeriod.charAt(0).toUpperCase() + timePeriod.slice(1)})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            {loading ? (
+              <div className="space-y-2 p-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : analytics.usageComparison.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={analytics.usageComparison}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 12 }}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis />
+                  <Tooltip 
+                    labelFormatter={(value) => `Period: ${value}`}
+                    formatter={(value) => [`${value}`, 'Usage']}
+                  />
+                  <Bar 
+                    dataKey="usage" 
+                    fill="hsl(var(--primary))" 
+                    name="Stock Usage"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </RechartsBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                {loading ? "Loading..." : "No usage data available"}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

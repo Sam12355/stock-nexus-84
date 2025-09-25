@@ -19,24 +19,11 @@ interface ActivityLog {
   details: string;
 }
 
-interface ActivitySummary {
-  todayActivities: number;
-  stockMovements: number;
-  alertsGenerated: number;
-  activeUsers: number;
-}
 
 const ActivityLogs = () => {
   const { profile } = useAuth();
   const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [summary, setSummary] = useState<ActivitySummary>({
-    todayActivities: 0,
-    stockMovements: 0,
-    alertsGenerated: 0,
-    activeUsers: 0
-  });
   const [loadingFeed, setLoadingFeed] = useState(true);
-  const [loadingSummary, setLoadingSummary] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
 
@@ -145,63 +132,11 @@ const ActivityLogs = () => {
     }
   }, [profile, filterType]);
 
-  const fetchActivitySummary = useCallback(async () => {
-    if (!profile) return;
-    setLoadingSummary(true);
-
-    try {
-      const branchId = profile.branch_id || profile.branch_context;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayISO = today.toISOString();
-
-      // Count today's stock movements (for this branch via items relation)
-      const { count: movementsCount } = await supabase
-        .from('stock_movements')
-        .select('id, item_id', { count: 'exact', head: true })
-        .gte('created_at', todayISO);
-
-      // Count today's activity logs
-      const { count: activityCount } = await supabase
-        .from('activity_logs')
-        .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId)
-        .gte('created_at', todayISO);
-
-      // Count alerts (notifications)
-      const { count: alertsCount } = await supabase
-        .from('notifications')
-        .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId)
-        .gte('created_at', todayISO);
-
-      // Count active users (accessed today)
-      const { count: activeUsersCount } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('branch_id', branchId)
-        .gte('last_access', todayISO);
-
-      setSummary({
-        todayActivities: (activityCount || 0) + (movementsCount || 0),
-        stockMovements: movementsCount || 0,
-        alertsGenerated: alertsCount || 0,
-        activeUsers: activeUsersCount || 0
-      });
-
-    } catch (error) {
-      console.error('Error fetching activity summary:', error);
-    } finally {
-      setLoadingSummary(false);
-    }
-  }, [profile]);
-
   useEffect(() => {
     if (profile) {
       fetchActivityLogs();
-      fetchActivitySummary();
     }
-  }, [profile, fetchActivityLogs, fetchActivitySummary]);
+  }, [profile, fetchActivityLogs]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -255,69 +190,6 @@ const ActivityLogs = () => {
             <SelectItem value="general">General Logs</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Activities</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingSummary ? (
-              <Skeleton className="h-8 w-16 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold">{summary.todayActivities}</div>
-            )}
-            <p className="text-xs text-muted-foreground">Total actions today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Stock Movements</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingSummary ? (
-              <Skeleton className="h-8 w-16 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold">{summary.stockMovements}</div>
-            )}
-            <p className="text-xs text-muted-foreground">In/Out operations today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alerts Generated</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingSummary ? (
-              <Skeleton className="h-8 w-16 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold">{summary.alertsGenerated}</div>
-            )}
-            <p className="text-xs text-muted-foreground">Today's notifications</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loadingSummary ? (
-              <Skeleton className="h-8 w-16 mb-1" />
-            ) : (
-              <div className="text-2xl font-bold">{summary.activeUsers}</div>
-            )}
-            <p className="text-xs text-muted-foreground">Accessed today</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Activity Feed */}
