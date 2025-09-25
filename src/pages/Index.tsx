@@ -401,9 +401,9 @@ const Index = () => {
 
   return (
     <>
-      {/* Full-screen blur overlay for branch selection */}
+      {/* Full-screen glassmorphism overlay for branch selection */}
       {showBranchSelection && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40" />
+        <div className="fixed inset-0 bg-gradient-to-br from-background/70 via-background/50 to-background/70 backdrop-blur-lg backdrop-saturate-150 z-40" />
       )}
       
       <div className="space-y-6">
@@ -418,14 +418,6 @@ const Index = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Activity className="h-4 w-4" />
           Today: {new Date().toLocaleDateString()}
-          {(extendedProfile?.role === 'regional_manager' || 
-            extendedProfile?.role === 'district_manager' || 
-            extendedProfile?.role === 'manager' || 
-            extendedProfile?.role === 'assistant_manager') && (
-            <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
-              <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
-            </Button>
-          )}
         </div>
       </div>
 
