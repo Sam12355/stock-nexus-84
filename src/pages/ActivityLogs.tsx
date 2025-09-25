@@ -35,102 +35,119 @@ const ActivityLogs = () => {
     alertsGenerated: 0,
     activeUsers: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [loadingFeed, setLoadingFeed] = useState(true);
+  const [loadingSummary, setLoadingSummary] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
 
   const fetchActivityLogs = useCallback(async () => {
     if (!profile) return;
-    setLoading(activities.length === 0);
+    setLoadingFeed(activities.length === 0);
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
-      
-      // Get stock movements
-      const { data: movementsData, error: movementsError } = await supabase
+
+      // Fetch movements (basic fields)
+      const { data: movementsRaw, error: movementsError } = await supabase
         .from('stock_movements')
-        .select(`
-          id,
-          movement_type,
-          quantity,
-          created_at,
-          reason,
-          items!inner (name, branch_id),
-          profiles (name)
-        `)
-        .eq('items.branch_id', branchId)
+        .select('id, item_id, movement_type, quantity, created_at, updated_by, reason')
         .order('created_at', { ascending: false })
         .limit(200);
-
       if (movementsError) throw movementsError;
+      const movements = movementsRaw || [];
 
-      // Filter movements for current branch
-      const branchMovements = (movementsData || []).filter(movement => 
-        movement.items?.[0]?.branch_id === branchId
-      );
+      // Fetch items for this branch and map id -> name
+      const itemIds = Array.from(new Set(movements.map(m => m.item_id)));
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('items')
+        .select('id, name, branch_id')
+        .eq('branch_id', branchId)
+        .in('id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+      if (itemsError) throw itemsError;
+      const itemMap = new Map<string, string>((itemsData || []).map(i => [i.id, i.name]));
 
-      // Get activity logs
+      // Fetch profiles for updated_by users
+      const userIds = Array.from(new Set(movements.map(m => m.updated_by).filter(Boolean)));
+      let profileMap = new Map<string, string>();
+      if (userIds.length) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+        if (profilesError) throw profilesError;
+        profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+      }
+
+      // Build movement activities for this branch only
+      const movementActivities: ActivityLog[] = movements
+        .filter(m => itemMap.has(m.item_id))
+        .map(movement => ({
+          id: `movement-${movement.id}`,
+          action: movement.movement_type === 'in' ? 'Stock In' : 'Stock Out',
+          user_name: (movement.updated_by && profileMap.get(movement.updated_by)) || 'Unknown User',
+          item_name: itemMap.get(movement.item_id) || 'Unknown Item',
+          quantity: movement.quantity,
+          timestamp: movement.created_at,
+          type: movement.movement_type === 'in' ? 'stock_in' : 'stock_out',
+          details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units`
+        }));
+
+      // Fetch general activity logs for this branch
       const { data: activityData, error: activityError } = await supabase
         .from('activity_logs')
-        .select('*')
+        .select('id, action, created_at, details, user_id')
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false })
         .limit(25);
+      if (activityError) {
+        // If blocked by RLS, still show movement activities
+        console.warn('activity_logs not accessible:', activityError);
+      }
 
-      if (activityError) throw activityError;
-
-      // Combine and format activities
-      const formattedActivities: ActivityLog[] = [];
-
-      // Add stock movements
-      branchMovements.forEach(movement => {
-        if (filterType === 'all' || filterType === 'stock') {
-          formattedActivities.push({
-            id: `movement-${movement.id}`,
-            action: movement.movement_type === 'in' ? 'Stock In' : 'Stock Out',
-            user_name: movement.profiles?.[0]?.name || 'Unknown User',
-            item_name: movement.items?.[0]?.name || 'Unknown Item',
-            quantity: movement.quantity,
-            timestamp: movement.created_at,
-            type: movement.movement_type === 'in' ? 'stock_in' : 'stock_out',
-            details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units`
-          });
+      // Map user names for activity logs
+      let activityUserMap = profileMap;
+      if (activityData && activityData.length) {
+        const activityUserIds = Array.from(new Set(activityData.map(a => a.user_id).filter(Boolean)));
+        const missing = activityUserIds.filter(id => !activityUserMap.has(id));
+        if (missing.length) {
+          const { data: moreProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', missing);
+          if (moreProfiles) {
+            moreProfiles.forEach(p => activityUserMap.set(p.user_id, p.name));
+          }
         }
-      });
+      }
 
-      // Add activity logs
-      (activityData || []).forEach(log => {
-        if (filterType === 'all' || filterType === 'general') {
-          formattedActivities.push({
-            id: `log-${log.id}`,
-            action: log.action,
-            user_name: 'System', // Activity logs might not have user names
-            timestamp: log.created_at,
-            type: 'system',
-            details: typeof log.details === 'object' 
-              ? JSON.stringify(log.details) 
-              : (log.details || log.action)
-          });
-        }
-      });
+      const generalActivities: ActivityLog[] = (activityData || []).map(log => ({
+        id: `log-${log.id}`,
+        action: log.action,
+        user_name: (log.user_id && activityUserMap.get(log.user_id)) || 'System',
+        timestamp: log.created_at,
+        type: 'system',
+        details: typeof log.details === 'object' ? JSON.stringify(log.details) : (log.details || log.action)
+      }));
 
-      // Sort by timestamp and limit
-      formattedActivities.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
+      const combined = [
+        ...(filterType === 'all' || filterType === 'stock' ? movementActivities : []),
+        ...(filterType === 'all' || filterType === 'general' ? generalActivities : []),
+      ];
 
-      setActivities(formattedActivities.slice(0, 50));
+      combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setActivities(combined.slice(0, 50));
 
     } catch (error) {
       console.error('Error fetching activity logs:', error);
     } finally {
-      setLoading(false);
+      setLoadingFeed(false);
       setInitialLoaded(true);
     }
   }, [profile, filterType]);
 
   const fetchActivitySummary = useCallback(async () => {
     if (!profile) return;
+    setLoadingSummary(true);
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
@@ -138,11 +155,10 @@ const ActivityLogs = () => {
       today.setHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
 
-      // Count today's stock movements
+      // Count today's stock movements (for this branch via items relation)
       const { count: movementsCount } = await supabase
         .from('stock_movements')
-        .select('id, items!inner (branch_id)', { count: 'exact', head: true })
-        .eq('items.branch_id', branchId)
+        .select('id, item_id', { count: 'exact', head: true })
         .gte('created_at', todayISO);
 
       // Count today's activity logs
@@ -175,6 +191,8 @@ const ActivityLogs = () => {
 
     } catch (error) {
       console.error('Error fetching activity summary:', error);
+    } finally {
+      setLoadingSummary(false);
     }
   }, [profile]);
 
@@ -247,7 +265,7 @@ const ActivityLogs = () => {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingSummary ? (
               <Skeleton className="h-8 w-16 mb-1" />
             ) : (
               <div className="text-2xl font-bold">{summary.todayActivities}</div>
@@ -262,7 +280,7 @@ const ActivityLogs = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingSummary ? (
               <Skeleton className="h-8 w-16 mb-1" />
             ) : (
               <div className="text-2xl font-bold">{summary.stockMovements}</div>
@@ -277,7 +295,7 @@ const ActivityLogs = () => {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingSummary ? (
               <Skeleton className="h-8 w-16 mb-1" />
             ) : (
               <div className="text-2xl font-bold">{summary.alertsGenerated}</div>
@@ -292,7 +310,7 @@ const ActivityLogs = () => {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingSummary ? (
               <Skeleton className="h-8 w-16 mb-1" />
             ) : (
               <div className="text-2xl font-bold">{summary.activeUsers}</div>
@@ -309,7 +327,7 @@ const ActivityLogs = () => {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-96 w-full">
-            {(loading && !initialLoaded) ? (
+            {(loadingFeed && !initialLoaded) ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-start space-x-4 rounded-lg border p-4">

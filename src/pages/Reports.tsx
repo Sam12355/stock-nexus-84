@@ -86,29 +86,53 @@ const Reports = () => {
         setStockReport(stockData);
         setStockLoaded(true);
       } else if (selectedReport === 'movements') {
-        const { data, error } = await supabase
+        const { data: movementsRaw, error: movementsError } = await supabase
           .from('stock_movements')
           .select(`
             id,
+            item_id,
             movement_type,
             quantity,
             created_at,
-            items!inner (name, branch_id),
-            profiles (name)
+            updated_by,
+            reason
           `)
-          .eq('items.branch_id', branchId)
           .order('created_at', { ascending: false })
           .limit(50);
 
-        if (error) throw error;
+        if (movementsError) throw movementsError;
 
-        const movementData = (data || []).map(movement => ({
+        const movements = movementsRaw || [];
+        const itemIds = Array.from(new Set(movements.map(m => m.item_id)));
+        const userIds = Array.from(new Set(movements.map(m => m.updated_by).filter(Boolean)));
+
+        // Fetch item names for current branch only
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('items')
+          .select('id, name')
+          .eq('branch_id', branchId)
+          .in('id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+        if (itemsError) throw itemsError;
+        const itemMap = new Map<string, string>((itemsData || []).map(i => [i.id, i.name]));
+
+        // Fetch user names from profiles
+        let profileMap = new Map<string, string>();
+        if (userIds.length) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', userIds);
+          if (profilesError) throw profilesError;
+          profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+        }
+
+        const movementData: MovementReport[] = movements.map((movement) => ({
           id: movement.id,
-          item_name: movement.items?.[0]?.name || 'Unknown Item',
+          item_name: itemMap.get(movement.item_id) || 'Unknown Item',
           movement_type: movement.movement_type,
           quantity: movement.quantity,
           created_at: movement.created_at,
-          updated_by_name: movement.profiles?.[0]?.name || 'Unknown User'
+          updated_by_name: (movement.updated_by && profileMap.get(movement.updated_by)) || 'Unknown User'
         }));
 
         setMovementReport(movementData);
