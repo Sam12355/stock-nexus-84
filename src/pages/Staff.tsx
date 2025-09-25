@@ -65,23 +65,55 @@ const Staff = () => {
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   const fetchStaffMembers = async () => {
+    setLoading(true);
     try {
-      let query = supabase.from('profiles').select('*');
-      
-      // Filter based on user role
-      if (profile?.role === 'manager' || profile?.role === 'assistant_manager') {
-        query = query.eq('branch_id', profile.branch_id);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
+      let query = supabase
+        .from('profiles')
+        .select(`
+          id,
+          user_id,
+          name,
+          email,
+          phone,
+          photo_url,
+          position,
+          role,
+          branch_id,
+          access_count,
+          created_at,
+          updated_at,
+          branches (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Admin sees ALL staff, others see only their branch staff
+      if (profile && (profile.role as string) !== 'admin') {
+        const userBranchId = profile.branch_id || profile.branch_context;
+        if (userBranchId && (profile.role === 'manager' || profile.role === 'assistant_manager')) {
+          query = query.eq('branch_id', userBranchId);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching staff:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load staff members",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setStaffMembers(data || []);
     } catch (error) {
-      console.error('Error fetching staff members:', error);
+      console.error('Error in fetchStaffMembers:', error);
       toast({
-        title: "Error",
-        description: "Failed to load staff members",
+        title: "Error", 
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -280,7 +312,8 @@ const Staff = () => {
   useEffect(() => {
     if (canManageStaff) {
       fetchStaffMembers();
-      if (profile?.role === 'regional_manager') {
+      // Load all branches for admin, regional managers, and district managers
+      if ((profile.role as string) === 'admin' || profile.role === 'regional_manager' || profile.role === 'district_manager') {
         supabase
           .from('branches')
           .select('id,name')

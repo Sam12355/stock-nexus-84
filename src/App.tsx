@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AdminRedirect } from "@/components/AdminRedirect";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -29,7 +30,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
+              <Route path="/" element={<DashboardLayout><AdminRedirect><Index /></AdminRedirect></DashboardLayout>} />
               <Route path="/items" element={<DashboardLayout><Items /></DashboardLayout>} />
               <Route path="/stock" element={<DashboardLayout><Stock /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
