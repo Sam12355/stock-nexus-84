@@ -15,6 +15,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Package2, Plus, Edit, Trash2, Search, Thermometer, AlertTriangle } from "lucide-react";
 import { z } from "zod";
 
+// Extended interface for profile with branch_context
+interface ExtendedProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  photo_url?: string;
+  position?: string;
+  role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
+  branch_id?: string;
+  branch_context?: string;
+  last_access?: string;
+  access_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Item {
   id: string;
   name: string;
@@ -57,7 +75,7 @@ const itemSchema = z.object({
 });
 
 const Items = () => {
-  const { profile } = useAuth();
+  const { profile } = useAuth() as { profile: ExtendedProfile | null };
   const { toast } = useToast();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,9 +99,11 @@ const Items = () => {
     try {
       let query = supabase.from('items').select('*');
       
-      // Filter by branch if not regional_manager
-      if (profile?.role !== 'regional_manager' && profile?.branch_id) {
+      // Filter by branch - Regional/District managers can see all if no branch_context, otherwise filter by context
+      if (profile?.role !== 'regional_manager' && profile?.role !== 'district_manager' && profile?.branch_id) {
         query = query.eq('branch_id', profile.branch_id);
+      } else if ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && profile?.branch_context) {
+        query = query.eq('branch_id', profile.branch_context);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -132,7 +152,8 @@ const Items = () => {
     if (!validateForm()) return;
 
     try {
-      if (profile?.role === 'regional_manager' && !selectedBranchId) {
+      // Regional managers with branch_context don't need to select branch
+      if (profile?.role === 'regional_manager' && !profile?.branch_context && !selectedBranchId) {
         toast({
           title: "Branch required",
           description: "Please select a branch for this item.",
@@ -148,7 +169,9 @@ const Items = () => {
         image_url: formData.image_url.trim() || null,
         storage_temperature: formData.storage_temperature ? parseFloat(formData.storage_temperature) : null,
         threshold_level: parseInt(formData.threshold_level),
-        branch_id: profile?.role === 'regional_manager' ? selectedBranchId : profile?.branch_id,
+        branch_id: profile?.role === 'regional_manager' || profile?.role === 'district_manager' 
+          ? (profile?.branch_context || selectedBranchId) 
+          : profile?.branch_id,
         created_by: profile?.id
       };
 
@@ -328,7 +351,8 @@ const Items = () => {
                 </Select>
                  {formErrors.category && <p className="text-sm text-red-500 mt-1">{formErrors.category}</p>}
 
-                 {profile?.role === 'regional_manager' && (
+                 {/* Only show branch selection for regional managers without branch_context */}
+                 {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && (
                    <div className="mt-2">
                      <Label htmlFor="branch">Branch *</Label>
                      <Select onValueChange={(value) => setSelectedBranchId(value)}>
