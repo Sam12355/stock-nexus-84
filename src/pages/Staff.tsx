@@ -132,11 +132,9 @@ const Staff = () => {
 
         // Log activity
         try {
-          const branchId = profile?.branch_id || profile?.branch_context || '';
           await supabase.rpc('log_user_activity', {
             p_action: 'staff_updated',
-            p_details: JSON.stringify({ staff_id: selectedStaff.id, role: formData.role }),
-            p_branch_id: branchId
+            p_details: JSON.stringify({ staff_id: selectedStaff.id, role: formData.role })
           });
         } catch (logError) {
           console.warn('Failed to log staff update:', logError);
@@ -183,8 +181,7 @@ const Staff = () => {
             : profile?.branch_id;
           await supabase.rpc('log_user_activity', {
             p_action: 'staff_created',
-            p_details: JSON.stringify({ name: formData.name, role: formData.role }),
-            p_branch_id: branchId || ''
+            p_details: JSON.stringify({ name: formData.name, role: formData.role })
           });
         } catch (logError) {
           console.warn('Failed to log staff creation:', logError);

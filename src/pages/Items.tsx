@@ -191,8 +191,7 @@ const Items = () => {
         try {
           await supabase.rpc('log_user_activity', {
             p_action: 'item_updated',
-            p_details: JSON.stringify({ item_id: selectedItem.id, name: itemData.name }),
-            p_branch_id: itemData.branch_id
+            p_details: JSON.stringify({ item_id: selectedItem.id, name: itemData.name })
           });
         } catch (logError) {
           console.warn('Failed to log item update:', logError);
@@ -215,8 +214,7 @@ const Items = () => {
         try {
           await supabase.rpc('log_user_activity', {
             p_action: 'item_created',
-            p_details: JSON.stringify({ name: itemData.name }),
-            p_branch_id: itemData.branch_id
+            p_details: JSON.stringify({ name: itemData.name })
           });
         } catch (logError) {
           console.warn('Failed to log item creation:', logError);
@@ -253,11 +251,10 @@ const Items = () => {
 
       // Log activity
       try {
-        const branchId = profile?.branch_id || profile?.branch_context || '';
+        const branchId = profile?.branch_id || profile?.branch_context;
         await supabase.rpc('log_user_activity', {
           p_action: 'item_deleted',
-          p_details: JSON.stringify({ item_id: itemId }),
-          p_branch_id: branchId
+          p_details: JSON.stringify({ item_id: itemId })
         });
       } catch (logError) {
         console.warn('Failed to log item deletion:', logError);

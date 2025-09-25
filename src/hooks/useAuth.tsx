@@ -208,8 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           await supabase.rpc('log_user_activity', {
             p_action: 'profile_updated',
-            p_details: JSON.stringify({ fields: Object.keys(updates || {}) }),
-            p_branch_id: profile?.branch_id || profile?.branch_context || null as any
+            p_details: JSON.stringify({ fields: Object.keys(updates || {}) })
           });
         } catch (logError) {
           console.warn('Failed to log profile update:', logError);
