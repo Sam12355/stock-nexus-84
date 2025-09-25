@@ -326,7 +326,7 @@ const Index = () => {
       toast({ title: "Event added", description: "Your event has been created." });
 
       // Send immediate event reminder notification
-      if (newEvent.title && selectedBranchId) {
+      if (newEvent.title && selectedBranchOption?.value) {
         try {
           await supabase.functions.invoke('send-event-reminder', {
             body: {
@@ -334,7 +334,7 @@ const Index = () => {
               eventDescription: newEvent.description,
               eventDate: newEvent.event_date?.toISOString(),
               eventType: newEvent.event_type,
-              branchId: selectedBranchId,
+              branchId: selectedBranchOption.value,
               reminderType: 'immediate'
             }
           });
