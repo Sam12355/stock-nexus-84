@@ -4,6 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Package, 
   Users, 
@@ -24,6 +28,8 @@ interface DashboardStats {
   criticalStockItems: number;
   totalStaff: number;
   recentActivities: ActivityLog[];
+  lowStockDetails?: any[];
+  criticalStockDetails?: any[];
 }
 
 interface ActivityLog {
@@ -54,11 +60,23 @@ const Index = () => {
     lowStockItems: 0,
     criticalStockItems: 0,
     totalStaff: 0,
-    recentActivities: []
+    recentActivities: [],
+    lowStockDetails: [],
+    criticalStockDetails: []
   });
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [modalStockType, setModalStockType] = useState<'low' | 'critical'>('low');
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    event_date: '',
+    event_type: 'reminder'
+  });
 
   const fetchDashboardData = async () => {
     try {
@@ -69,8 +87,10 @@ const Index = () => {
           *,
           items (
             name,
+            category,
             threshold_level,
-            branch_id
+            branch_id,
+            image_url
           )
         `);
 
@@ -82,13 +102,14 @@ const Index = () => {
         filteredStock = stockData?.filter(item => item.items.branch_id === profile.branch_id) || [];
       }
 
-      // Calculate stock statistics
+      // Calculate stock statistics - critical items are NOT included in low stock
       const totalItems = filteredStock.length;
-      const lowStock = filteredStock.filter(item => 
-        item.current_quantity <= item.items.threshold_level
-      );
       const criticalStock = filteredStock.filter(item => 
         item.current_quantity <= item.items.threshold_level * 0.5
+      );
+      const lowStock = filteredStock.filter(item => 
+        item.current_quantity <= item.items.threshold_level && 
+        item.current_quantity > item.items.threshold_level * 0.5
       );
 
       // Fetch staff count
@@ -119,12 +140,31 @@ const Index = () => {
       const { data: activities, error: activityError } = await activityQuery;
       if (activityError) throw activityError;
 
+      // Fetch events
+      let eventsQuery = supabase
+        .from('calendar_events')
+        .select('*')
+        .gte('event_date', new Date().toISOString().split('T')[0])
+        .order('event_date', { ascending: true })
+        .limit(5);
+
+      if (profile?.role !== 'admin' && profile?.branch_id) {
+        eventsQuery = eventsQuery.eq('branch_id', profile.branch_id);
+      }
+
+      const { data: eventsData, error: eventsError } = await eventsQuery;
+      if (eventsError) throw eventsError;
+
+      setEvents(eventsData || []);
+
       setStats({
         totalItems,
         lowStockItems: lowStock.length,
         criticalStockItems: criticalStock.length,
         totalStaff: staffCount || 0,
-        recentActivities: activities || []
+        recentActivities: activities || [],
+        lowStockDetails: lowStock,
+        criticalStockDetails: criticalStock
       });
 
     } catch (error) {
@@ -149,6 +189,34 @@ const Index = () => {
       console.error('Error fetching weather:', error);
     } finally {
       setWeatherLoading(false);
+    }
+  };
+
+  const handleAddEvent = async () => {
+    if (!newEvent.title || !newEvent.event_date) return;
+
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .insert([{
+          ...newEvent,
+          branch_id: profile?.role === 'admin' ? profile?.branch_id : profile?.branch_id,
+          created_by: profile?.id
+        }]);
+
+      if (error) throw error;
+
+      // Refresh events
+      fetchDashboardData();
+      setShowEventModal(false);
+      setNewEvent({
+        title: '',
+        description: '',
+        event_date: '',
+        event_type: 'reminder'
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
     }
   };
 
@@ -196,7 +264,13 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            setModalStockType('low');
+            setShowStockModal(true);
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-500" />
@@ -207,7 +281,13 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            setModalStockType('critical');
+            setShowStockModal(true);
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Critical Stock</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -232,36 +312,43 @@ const Index = () => {
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Activity */}
+        {/* Calendar & Events */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest system activities and updates</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Calendar & Events</CardTitle>
+              <CardDescription>Upcoming events and reminders</CardDescription>
+            </div>
+            {(profile?.role === 'admin' || profile?.role === 'manager') && (
+              <Button onClick={() => setShowEventModal(true)}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.recentActivities.length > 0 ? (
-                stats.recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border">
+              {events.length > 0 ? (
+                events.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                       <div>
-                        <p className="font-medium">{activity.action}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.profiles?.name || 'System'}
-                        </p>
+                        <p className="font-medium">{event.title}</p>
+                        <p className="text-sm text-muted-foreground">{event.description}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(activity.created_at).toLocaleDateString()}
+                      <p className="text-sm font-medium">
+                        {new Date(event.event_date).toLocaleDateString()}
                       </p>
+                      <Badge variant="outline">{event.event_type}</Badge>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No recent activities found
+                  No upcoming events
                 </div>
               )}
             </div>
@@ -341,6 +428,105 @@ const Index = () => {
           </Card>
         </div>
       </div>
+
+      {/* Stock Details Modal */}
+      <Dialog open={showStockModal} onOpenChange={setShowStockModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {modalStockType === 'low' ? 'Low Stock Items' : 'Critical Stock Items'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {(modalStockType === 'low' ? stats.lowStockDetails : stats.criticalStockDetails)?.map((item: any) => (
+              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  {item.items.image_url ? (
+                    <img 
+                      src={item.items.image_url} 
+                      alt={item.items.name}
+                      className="w-10 h-10 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium">{item.items.name}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{item.items.category}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">Current: {item.current_quantity}</p>
+                  <p className="text-sm text-muted-foreground">Threshold: {item.items.threshold_level}</p>
+                </div>
+              </div>
+            )) || []}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Event Modal */}
+      <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Event</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="event-title">Title *</Label>
+              <Input
+                id="event-title"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                placeholder="Event title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-description">Description</Label>
+              <Input
+                id="event-description"
+                value={newEvent.description}
+                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                placeholder="Event description"
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-date">Date *</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={newEvent.event_date}
+                onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-type">Type</Label>
+              <Select onValueChange={(value) => setNewEvent({ ...newEvent, event_type: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowEventModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddEvent}>
+                Add Event
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
