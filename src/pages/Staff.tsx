@@ -343,12 +343,24 @@ const Staff = () => {
       fetchStaffMembers();
       // Load all branches for admin, regional managers, and district managers
       if ((profile.role as string) === 'admin' || profile.role === 'regional_manager' || profile.role === 'district_manager') {
+        console.log('Fetching branches for admin/manager role:', profile.role);
         supabase
           .from('branches')
           .select('id,name')
           .order('name', { ascending: true })
           .then(({ data, error }) => {
-            if (!error) setBranches(data || []);
+            console.log('Branches fetch result:', { data, error });
+            if (error) {
+              console.error('Error fetching branches:', error);
+              toast({
+                title: "Error loading branches",
+                description: error.message,
+                variant: "destructive",
+              });
+            } else {
+              setBranches(data || []);
+              console.log('Branches set to state:', data);
+            }
           });
       }
     }
