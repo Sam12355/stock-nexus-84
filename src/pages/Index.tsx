@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,7 @@ const Index = () => {
     event_type: 'reminder'
   });
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
+  const hasFetchedWeatherRef = useRef(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -233,7 +234,10 @@ const Index = () => {
   useEffect(() => {
     if (profile) {
       fetchDashboardData();
-      fetchWeatherData();
+      if (!hasFetchedWeatherRef.current) {
+        hasFetchedWeatherRef.current = true;
+        fetchWeatherData();
+      }
     }
   }, [profile]);
 
@@ -260,6 +264,11 @@ const Index = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Activity className="h-4 w-4" />
           Today: {new Date().toLocaleDateString()}
+          {(profile?.role === 'admin' || profile?.role === 'manager') && (
+            <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
+              <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
+            </Button>
+          )}
         </div>
       </div>
 
