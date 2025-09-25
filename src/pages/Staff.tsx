@@ -289,6 +289,7 @@ const Staff = () => {
 
   const openEditModal = (staff: StaffMember) => {
     setSelectedStaff(staff);
+    setSelectedBranchId(staff.branch_id || "");
     setFormData({
       name: staff.name,
       email: staff.email,
@@ -297,6 +298,7 @@ const Staff = () => {
       role: staff.role,
       photo_url: staff.photo_url || ""
     });
+    setFormErrors({});
     setIsEditModalOpen(true);
   };
 
@@ -404,39 +406,39 @@ const Staff = () => {
 
               <div>
                 <Label htmlFor="role">Role *</Label>
-                <Select onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
+                <Select onValueChange={(value: any) => setFormData({ ...formData, role: value })} defaultValue={formData.role}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="staff">Staff</SelectItem>
                     <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                    {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
-                      <SelectItem value="manager">Manager</SelectItem>
-                    )}
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="district_manager">District Manager</SelectItem>
+                    <SelectItem value="regional_manager">Regional Manager</SelectItem>
                   </SelectContent>
                 </Select>
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
-
-                {/* Only show branch selection for regional managers without branch_context */}
-                {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && (
-                  <div className="mt-2">
-                    <Label htmlFor="branch">Branch *</Label>
-                    <Select onValueChange={(value) => setSelectedBranchId(value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {branches.map((b) => (
-                          <SelectItem key={b.id} value={b.id}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </div>
+
+              {/* Branch selection - show for admin and higher roles */}
+              {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
+                <div>
+                  <Label htmlFor="branch">Branch *</Label>
+                  <Select onValueChange={(value) => setSelectedBranchId(value)} defaultValue={selectedBranchId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="photo_url">Staff Photo</Label>
@@ -674,13 +676,32 @@ const Staff = () => {
                 <SelectContent>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                  {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
-                    <SelectItem value="manager">Manager</SelectItem>
-                  )}
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="district_manager">District Manager</SelectItem>
+                  <SelectItem value="regional_manager">Regional Manager</SelectItem>
                 </SelectContent>
               </Select>
               {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
             </div>
+
+            {/* Branch selection for edit */}
+            {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
+              <div>
+                <Label htmlFor="edit-branch">Branch *</Label>
+                <Select onValueChange={(value) => setSelectedBranchId(value)} defaultValue={selectedStaff?.branch_id || ""}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="edit-photo_url">Staff Photo</Label>
