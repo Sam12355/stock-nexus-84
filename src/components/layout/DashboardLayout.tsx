@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, fetchProfile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +20,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       navigate('/auth', { replace: true });
     }
   }, [user, loading, navigate]);
+
+  // Force-refresh profile whenever the authenticated user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile();
+    }
+  }, [user?.id, fetchProfile]);
 
   if (loading) {
     return (
@@ -47,7 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="lg:hidden" />
               <h2 className="font-semibold text-lg text-foreground hidden sm:block">
-                Welcome back, {profile?.name || 'User'}!
+                Welcome back, {(profile?.name || (user?.user_metadata as any)?.name || user?.email?.split('@')[0] || 'User')}!
               </h2>
             </div>
             

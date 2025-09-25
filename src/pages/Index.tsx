@@ -13,7 +13,7 @@ const Index = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {profile?.name || 'User'}! Here's what's happening with your inventory.
+            Welcome back, {(profile?.name || (profile as any)?.email || 'User')}! Here's what's happening with your inventory.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
