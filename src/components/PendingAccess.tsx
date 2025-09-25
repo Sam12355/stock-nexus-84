@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Clock, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function PendingAccess() {
+  const { signOut } = useAuth();
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md shadow-lg">
@@ -36,6 +40,15 @@ export function PendingAccess() {
           <p className="text-xs text-muted-foreground">
             Please contact your administrator if you have any questions.
           </p>
+
+          <Button 
+            onClick={signOut}
+            variant="outline" 
+            className="w-full mt-4"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </CardContent>
       </Card>
     </div>
