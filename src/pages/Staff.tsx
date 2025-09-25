@@ -73,11 +73,25 @@ const Staff = () => {
     { value: 'staff', label: 'Staff' },
   ];
 
+  const allowedRolesByCreator: Record<string, Array<StaffMember['role']>> = {
+    admin: ['regional_manager','district_manager','manager','assistant_manager','staff'],
+    regional_manager: ['district_manager','manager','assistant_manager','staff'],
+    district_manager: ['manager','assistant_manager','staff'],
+    manager: ['assistant_manager','staff'],
+    assistant_manager: ['staff'],
+    staff: []
+  };
+
+  const allowedRoleValues = allowedRolesByCreator[profile?.role as string] || [];
+  const allowedRoleOptions = roleOptions.filter((o) => (allowedRoleValues as string[]).includes(o.value));
+
   const branchOptions = branches.map(b => ({ value: b.id, label: b.name }));
 
   const selectStyles: any = {
-    menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
-    menu: (base: any) => ({ ...base, zIndex: 9999, backgroundColor: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }),
+    container: (base: any) => ({ ...base, zIndex: 999999 }),
+    menuPortal: (base: any) => ({ ...base, zIndex: 999999, pointerEvents: 'auto' }),
+    menu: (base: any) => ({ ...base, zIndex: 999999, backgroundColor: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }),
+    menuList: (base: any) => ({ ...base, zIndex: 999999 }),
     control: (base: any, state: any) => ({
       ...base,
       backgroundColor: 'hsl(var(--background))',
@@ -448,7 +462,7 @@ const Staff = () => {
                 <ReactSelect
                   inputId="role"
                   classNamePrefix="rs"
-                  options={roleOptions}
+                  options={allowedRoleOptions}
                   value={roleOptions.find(o => o.value === formData.role)}
                   onChange={(opt) => {
                     const val = (opt as any)?.value;
@@ -457,6 +471,7 @@ const Staff = () => {
                   }}
                   styles={selectStyles}
                   menuPortalTarget={document.body}
+                  menuPosition="fixed"
                   menuShouldBlockScroll
                   placeholder="Select role"
                 />
@@ -479,6 +494,7 @@ const Staff = () => {
                     }}
                     styles={selectStyles}
                     menuPortalTarget={document.body}
+                    menuPosition="fixed"
                     menuShouldBlockScroll
                     placeholder="Select branch"
                   />
@@ -716,7 +732,7 @@ const Staff = () => {
               <ReactSelect
                 inputId="edit-role"
                 classNamePrefix="rs"
-                options={roleOptions}
+                options={allowedRoleOptions}
                 value={roleOptions.find(o => o.value === formData.role)}
                 onChange={(opt) => {
                   const val = (opt as any)?.value;
@@ -725,6 +741,7 @@ const Staff = () => {
                 }}
                 styles={selectStyles}
                 menuPortalTarget={document.body}
+                menuPosition="fixed"
                 menuShouldBlockScroll
                 placeholder="Select role"
               />
@@ -743,6 +760,8 @@ const Staff = () => {
                   onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
                   styles={selectStyles}
                   menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  menuShouldBlockScroll
                   placeholder="Select branch"
                 />
               </div>
