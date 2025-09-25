@@ -366,11 +366,21 @@ const Stock = () => {
       {/* Stock Items List */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {filterType === 'all' ? 'Current Stock Levels' :
-             filterType === 'low' ? 'Low Stock Items' :
-             'Critical Stock Items'}
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle>
+              {filterType === 'all' ? 'Current Stock Levels' :
+               filterType === 'low' ? 'Low Stock Items' :
+               'Critical Stock Items'}
+            </CardTitle>
+          </div>
+          <div className="mt-4">
+            <Input
+              placeholder="Search for items by name or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

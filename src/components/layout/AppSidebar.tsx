@@ -158,6 +158,11 @@ export function AppSidebar() {
                     <NavLink
                       to="/settings"
                       className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`}
+                      onClick={() => {
+                        if (isMobile) {
+                          setOpen(false);
+                        }
+                      }}
                     >
                       <Settings className="h-4 w-4" />
                       {!isCollapsed && <span>Settings</span>}
@@ -166,15 +171,17 @@ export function AppSidebar() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={signOut}
-                    className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    {!isCollapsed && <span className="ml-3">Sign Out</span>}
-                  </Button>
+                  <SidebarMenuButton asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={signOut}
+                      className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {!isCollapsed && <span className="ml-3">Sign Out</span>}
+                    </Button>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               </div>
             </SidebarGroupContent>
