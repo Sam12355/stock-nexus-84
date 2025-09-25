@@ -13,6 +13,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Package, TrendingUp, AlertTriangle, Plus, Minus, Eye } from "lucide-react";
 import ReactSelect from 'react-select';
 
+// Extended interface for profile with branch_context
+interface ExtendedProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  photo_url?: string;
+  position?: string;
+  role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
+  branch_id?: string;
+  branch_context?: string;
+  last_access?: string;
+  access_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface StockItem {
   id: string;
   item_id: string;
@@ -23,11 +41,12 @@ interface StockItem {
     category: string;
     threshold_level: number;
     image_url?: string;
+    branch_id: string;
   };
 }
 
 const Stock = () => {
-  const { profile } = useAuth();
+  const { profile } = useAuth() as { profile: ExtendedProfile | null };
   const { toast } = useToast();
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,13 +68,24 @@ const Stock = () => {
             name,
             category,
             threshold_level,
-            image_url
+            image_url,
+            branch_id
           )
         `)
         .order('last_updated', { ascending: false });
 
       if (error) throw error;
-      setStockItems(data || []);
+      
+      let stockData = data || [];
+      
+      // Filter by branch context for regional/district managers, by branch_id for others
+      if ((profile?.role !== 'regional_manager' && profile?.role !== 'district_manager') && profile?.branch_id) {
+        stockData = stockData.filter(item => item.items.branch_id === profile.branch_id);
+      } else if ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && profile?.branch_context) {
+        stockData = stockData.filter(item => item.items.branch_id === profile.branch_context);
+      }
+      
+      setStockItems(stockData);
     } catch (error) {
       console.error('Error fetching stock data:', error);
       toast({
