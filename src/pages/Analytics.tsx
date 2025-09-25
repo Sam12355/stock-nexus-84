@@ -31,7 +31,7 @@ const Analytics = () => {
 
   const fetchAnalyticsData = useCallback(async () => {
     if (!profile) return;
-    setLoading(true);
+    setLoading(analytics.totalItems === 0 && analytics.categoryData.length === 0 && analytics.movementTrends.length === 0);
 
     try {
       const branchId = profile.branch_id || profile.branch_context;

@@ -35,7 +35,7 @@ const Reports = () => {
 
   const fetchReportData = useCallback(async () => {
     if (!profile) return;
-    setLoading(true);
+    setLoading(selectedReport === 'stock' ? stockReport.length === 0 : movementReport.length === 0);
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
@@ -84,9 +84,10 @@ const Reports = () => {
             movement_type,
             quantity,
             created_at,
-            items (name),
+            items!inner (name, branch_id),
             profiles (name)
           `)
+          .eq('items.branch_id', branchId)
           .order('created_at', { ascending: false })
           .limit(50);
 

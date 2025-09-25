@@ -40,7 +40,7 @@ const ActivityLogs = () => {
 
   const fetchActivityLogs = useCallback(async () => {
     if (!profile) return;
-    setLoading(true);
+    setLoading(activities.length === 0);
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
@@ -54,11 +54,12 @@ const ActivityLogs = () => {
           quantity,
           created_at,
           reason,
-          items (name, branch_id),
+          items!inner (name, branch_id),
           profiles (name)
         `)
+        .eq('items.branch_id', branchId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(200);
 
       if (movementsError) throw movementsError;
 
@@ -138,7 +139,8 @@ const ActivityLogs = () => {
       // Count today's stock movements
       const { count: movementsCount } = await supabase
         .from('stock_movements')
-        .select('id', { count: 'exact', head: true })
+        .select('id, items!inner (branch_id)', { count: 'exact', head: true })
+        .eq('items.branch_id', branchId)
         .gte('created_at', todayISO);
 
       // Count today's activity logs
@@ -227,7 +229,7 @@ const ActivityLogs = () => {
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter activities" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50">
             <SelectItem value="all">All Activities</SelectItem>
             <SelectItem value="stock">Stock Movements</SelectItem>
             <SelectItem value="general">General Logs</SelectItem>
