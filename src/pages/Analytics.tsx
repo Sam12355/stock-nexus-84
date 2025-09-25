@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, LineChart as RechartsLineChart, Line } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ItemStockUsageChart } from "@/components/ItemStockUsageChart";
 
 interface AnalyticsData {
   totalItems: number;
@@ -275,16 +277,6 @@ const Analytics = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-        <Select value={timePeriod} onValueChange={setTimePeriod}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       
       {/* Key Metrics */}
@@ -481,6 +473,19 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Per-Item Stock Usage Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Item Stock Usage Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ItemStockUsageChart branchId={profile?.branch_id || profile?.branch_context} />
+        </CardContent>
+      </Card>
 
       {/* Usage Comparison Chart */}
       <Card>

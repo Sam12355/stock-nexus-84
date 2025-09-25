@@ -90,6 +90,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
+      // Log login activity
+      setTimeout(async () => {
+        try {
+          await supabase.rpc('log_user_activity', {
+            p_action: 'login',
+            p_details: JSON.stringify({ method: 'email' })
+          });
+        } catch (logError) {
+          console.warn('Failed to log login activity:', logError);
+        }
+      }, 0);
+      
       toast({
         title: "Welcome back!",
         description: "Successfully signed in to your account",
@@ -141,8 +153,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear branch_context before signing out
+      // Log logout activity before signing out
       if (user?.id) {
+        try {
+          await supabase.rpc('log_user_activity', {
+            p_action: 'logout',
+            p_details: JSON.stringify({ timestamp: new Date().toISOString() })
+          });
+        } catch (logError) {
+          console.warn('Failed to log logout activity:', logError);
+        }
+        
+        // Clear branch_context before signing out
         await supabase
           .from('profiles')
           .update({ branch_context: null })
