@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { User, Bell, Building, Save } from "lucide-react";
 
 interface ExtendedProfile {
@@ -50,6 +51,10 @@ const Settings = () => {
   const [hasTouchedBranch, setHasTouchedBranch] = useState(false);
   const hasTouchedNotificationsRef = useRef(false);
   const hasTouchedBranchRef = useRef(false);
+
+  // Phone collection dialog state
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [tempPhone, setTempPhone] = useState("");
 
   // Profile settings
   const [profileData, setProfileData] = useState({
@@ -184,6 +189,64 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to update branch settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle WhatsApp notification toggle with phone validation
+  const handleWhatsAppToggle = (checked: boolean) => {
+    if (checked && (!profileData.phone || profileData.phone.trim() === "")) {
+      setTempPhone("");
+      setShowPhoneDialog(true);
+      return;
+    }
+    
+    setHasTouchedNotifications(true);
+    hasTouchedNotificationsRef.current = true;
+    setNotifications((prev) => ({ ...prev, whatsapp: checked }));
+  };
+
+  // Save phone number and enable WhatsApp
+  const savePhoneAndEnableWhatsApp = async () => {
+    if (!tempPhone.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Update profile with phone number
+      const { error } = await supabase
+        .from("profiles")
+        .update({ phone: tempPhone.trim() })
+        .eq("id", profile?.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProfileData(prev => ({ ...prev, phone: tempPhone.trim() }));
+      
+      // Enable WhatsApp notifications
+      setHasTouchedNotifications(true);
+      hasTouchedNotificationsRef.current = true;
+      setNotifications((prev) => ({ ...prev, whatsapp: true }));
+      
+      setShowPhoneDialog(false);
+      
+      toast({
+        title: "Success",
+        description: "Phone number saved and WhatsApp notifications enabled",
+      });
+    } catch (error) {
+      console.error("Error saving phone:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save phone number",
         variant: "destructive",
       });
     } finally {
@@ -339,11 +402,7 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={notifications.whatsapp}
-                  onCheckedChange={(checked) => {
-                    setHasTouchedNotifications(true);
-                    hasTouchedNotificationsRef.current = true;
-                    setNotifications((prev) => ({ ...prev, whatsapp: checked }));
-                  }}
+                  onCheckedChange={handleWhatsAppToggle}
                 />
               </div>
             </div>
@@ -448,6 +507,46 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Phone Number Collection Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Phone Number</DialogTitle>
+            <DialogDescription>
+              Please enter your phone number to enable WhatsApp notifications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                placeholder="Enter your phone number (e.g., +1234567890)"
+                value={tempPhone}
+                onChange={(e) => setTempPhone(e.target.value)}
+                maxLength={30}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPhoneDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={savePhoneAndEnableWhatsApp}
+                disabled={loading || !tempPhone.trim()}
+                className="flex-1"
+              >
+                {loading ? "Saving..." : "Save & Enable"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
