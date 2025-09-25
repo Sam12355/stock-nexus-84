@@ -432,7 +432,12 @@ export type Database = {
         | "misc"
       notification_type: "email" | "sms" | "whatsapp"
       stock_level: "critical" | "low" | "adequate"
-      user_role: "admin" | "manager" | "assistant_manager" | "staff"
+      user_role:
+        | "regional_manager"
+        | "district_manager"
+        | "manager"
+        | "assistant_manager"
+        | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -569,7 +574,13 @@ export const Constants = {
       ],
       notification_type: ["email", "sms", "whatsapp"],
       stock_level: ["critical", "low", "adequate"],
-      user_role: ["admin", "manager", "assistant_manager", "staff"],
+      user_role: [
+        "regional_manager",
+        "district_manager",
+        "manager",
+        "assistant_manager",
+        "staff",
+      ],
     },
   },
 } as const
