@@ -84,10 +84,23 @@ const Index = () => {
   });
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
   const hasFetchedWeatherRef = useRef(false);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch items and stock data
+      // Fetch branches for admin users
+      if (profile?.role === 'admin') {
+        const { data: branchesData, error: branchesError } = await supabase
+          .from('branches')
+          .select('id, name')
+          .order('name');
+        
+        if (branchesError) throw branchesError;
+        setBranches(branchesData || []);
+      }
+
+      // ... keep existing code (items and stock data)
       const { data: stockData, error: stockError } = await supabase
         .from('stock')
         .select(`
@@ -147,7 +160,7 @@ const Index = () => {
       const { data: activities, error: activityError } = await activityQuery;
       if (activityError) throw activityError;
 
-      // Fetch events
+      // ... keep existing code (events fetch)
       let eventsQuery = supabase
         .from('calendar_events')
         .select('*')
@@ -217,14 +230,29 @@ const Index = () => {
       return;
     }
 
-    // Ensure branch assignment per security policies
-    if (!profile?.branch_id) {
-      toast({
-        title: "Profile missing branch",
-        description: "Assign a branch to your profile to add events.",
-        variant: "destructive",
-      });
-      return;
+    // Determine branch ID based on user role
+    let branchId: string | null = null;
+    if (profile?.role === 'admin') {
+      if (!selectedBranchId) {
+        toast({
+          title: "Branch is required",
+          description: "Please select a branch for this event.",
+          variant: "destructive",
+        });
+        return;
+      }
+      branchId = selectedBranchId;
+    } else {
+      // For managers, use their assigned branch
+      if (!profile?.branch_id) {
+        toast({
+          title: "Profile missing branch",
+          description: "Your profile needs to be assigned to a branch.",
+          variant: "destructive",
+        });
+        return;
+      }
+      branchId = profile.branch_id;
     }
 
     try {
@@ -233,7 +261,7 @@ const Index = () => {
         description: newEvent.description?.trim() || null,
         event_date: format(newEvent.event_date, 'yyyy-MM-dd'),
         event_type: newEvent.event_type,
-        branch_id: profile.branch_id,
+        branch_id: branchId,
         created_by: profile.id
       } as const;
 
@@ -248,6 +276,7 @@ const Index = () => {
       // Refresh events
       fetchDashboardData();
       setShowEventModal(false);
+      setSelectedBranchId(''); // Reset branch selection
       setNewEvent({
         title: '',
         description: '',
@@ -551,6 +580,23 @@ const Index = () => {
             <DialogTitle>Add New Event</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {profile?.role === 'admin' && (
+              <div>
+                <Label htmlFor="event-branch">Branch *</Label>
+                <Select onValueChange={setSelectedBranchId} value={selectedBranchId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label htmlFor="event-title">Title *</Label>
               <Input
