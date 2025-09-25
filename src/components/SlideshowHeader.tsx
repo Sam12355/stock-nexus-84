@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Thermometer, CalendarDays, MapPin } from 'lucide-react';
+import { Calendar, Clock, Thermometer, CalendarDays, MapPin, Droplets, Wind } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Event {
@@ -12,6 +12,8 @@ interface WeatherData {
   temperature: number;
   condition: string;
   location: string;
+  humidity: number;
+  windSpeed: number;
 }
 
 interface Slide {
@@ -25,48 +27,79 @@ export function SlideshowHeader() {
   const [events, setEvents] = useState<Event[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [branchLocation, setBranchLocation] = useState<string>('');
 
-  // Fetch events
+  // Fetch branch location and events
   useEffect(() => {
-    const fetchEvents = async () => {
-      const { data } = await supabase
-        .from('calendar_events')
-        .select('id, title, event_date')
-        .gte('event_date', new Date().toISOString())
-        .order('event_date', { ascending: true })
-        .limit(5);
-      
-      if (data) setEvents(data);
+    const fetchBranchData = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('branch_context')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (profile?.branch_context) {
+        const { data: branch } = await supabase
+          .from('branches')
+          .select('location')
+          .eq('id', profile.branch_context)
+          .single();
+        
+        if (branch?.location) {
+          setBranchLocation(branch.location);
+        }
+
+        const { data: events } = await supabase
+          .from('calendar_events')
+          .select('id, title, event_date')
+          .eq('branch_id', profile.branch_context)
+          .gte('event_date', new Date().toISOString())
+          .order('event_date', { ascending: true })
+          .limit(5);
+        
+        if (events) setEvents(events);
+      }
     };
-    fetchEvents();
+    fetchBranchData();
   }, []);
 
-  // Fetch weather
+  // Fetch weather based on branch location
   useEffect(() => {
     const fetchWeather = async () => {
+      if (!branchLocation) return;
+      
       try {
-        const response = await fetch('/api/weather');
-        if (response.ok) {
-          const data = await response.json();
-          setWeather(data);
-        } else {
-          // Fallback weather data
-          setWeather({ 
-            temperature: 24, 
-            condition: 'Partly Cloudy', 
-            location: 'Colombo' 
+        const { data, error } = await supabase.functions.invoke('get-weather', {
+          body: { city: branchLocation }
+        });
+        
+        if (error) throw error;
+        
+        if (data) {
+          setWeather({
+            temperature: Math.round(data.temperature),
+            condition: data.description,
+            location: branchLocation,
+            humidity: data.humidity,
+            windSpeed: Math.round(data.windSpeed * 3.6) // Convert m/s to km/h
           });
         }
       } catch (error) {
+        // Fallback weather data
         setWeather({ 
           temperature: 24, 
           condition: 'Partly Cloudy', 
-          location: 'Colombo' 
+          location: branchLocation || 'Colombo',
+          humidity: 65,
+          windSpeed: 12
         });
       }
     };
-    fetchWeather();
-  }, []);
+    
+    if (branchLocation) {
+      fetchWeather();
+    }
+  }, [branchLocation]);
 
   // Update time every second
   useEffect(() => {
@@ -122,10 +155,19 @@ export function SlideshowHeader() {
       type: 'weather' as const,
       id: 'weather',
       content: (
-        <div className="flex items-center gap-2 text-sm">
-          <Thermometer className="h-4 w-4 text-orange-500" />
-          <span className="font-medium text-foreground">{weather.temperature}°C</span>
-          <span className="text-muted-foreground">{weather.condition}</span>
+        <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1">
+            <Thermometer className="h-4 w-4 text-orange-500" />
+            <span className="font-medium text-foreground">{weather.temperature}°C</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Droplets className="h-4 w-4 text-blue-500" />
+            <span className="text-muted-foreground">{weather.humidity}%</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Wind className="h-4 w-4 text-green-500" />
+            <span className="text-muted-foreground">{weather.windSpeed}km/h</span>
+          </div>
           <div className="flex items-center gap-1 text-muted-foreground">
             <MapPin className="h-3 w-3" />
             <span className="text-xs">{weather.location}</span>
