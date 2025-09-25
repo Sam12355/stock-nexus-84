@@ -236,7 +236,7 @@ const Reports = () => {
                   </tbody>
                 </table>
               </div>
-            }
+            )}
           </CardContent>
         </Card>
       )}
