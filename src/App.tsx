@@ -7,6 +7,11 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import Items from "./pages/Items";
+import Stock from "./pages/Stock";
+import Reports from "./pages/Reports";
+import Staff from "./pages/Staff";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +28,31 @@ const App = () => (
             <Route path="/" element={
               <DashboardLayout>
                 <Index />
+              </DashboardLayout>
+            } />
+            <Route path="/items" element={
+              <DashboardLayout>
+                <Items />
+              </DashboardLayout>
+            } />
+            <Route path="/stock" element={
+              <DashboardLayout>
+                <Stock />
+              </DashboardLayout>
+            } />
+            <Route path="/reports" element={
+              <DashboardLayout>
+                <Reports />
+              </DashboardLayout>
+            } />
+            <Route path="/staff" element={
+              <DashboardLayout>
+                <Staff />
+              </DashboardLayout>
+            } />
+            <Route path="/settings" element={
+              <DashboardLayout>
+                <Settings />
               </DashboardLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

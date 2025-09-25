@@ -44,12 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     
     try {
+      console.log('Fetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      console.log('Profile query result:', { data, error });
       if (error) throw error;
       setProfile(data);
       
