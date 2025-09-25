@@ -450,9 +450,14 @@ const Staff = () => {
                   classNamePrefix="rs"
                   options={roleOptions}
                   value={roleOptions.find(o => o.value === formData.role)}
-                  onChange={(opt) => setFormData({ ...formData, role: (opt as any)?.value })}
+                  onChange={(opt) => {
+                    const val = (opt as any)?.value;
+                    console.log('Role selected:', val);
+                    setFormData({ ...formData, role: val });
+                  }}
                   styles={selectStyles}
                   menuPortalTarget={document.body}
+                  menuShouldBlockScroll
                   placeholder="Select role"
                 />
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
@@ -467,9 +472,14 @@ const Staff = () => {
                     classNamePrefix="rs"
                     options={branchOptions}
                     value={branchOptions.find(o => o.value === selectedBranchId) || null}
-                    onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
+                    onChange={(opt) => {
+                      const val = (opt as any)?.value;
+                      console.log('Branch selected:', val);
+                      setSelectedBranchId(val);
+                    }}
                     styles={selectStyles}
                     menuPortalTarget={document.body}
+                    menuShouldBlockScroll
                     placeholder="Select branch"
                   />
                 </div>
@@ -607,27 +617,29 @@ const Staff = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete {staff.name}? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(staff.id)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      {staff.user_id !== profile?.user_id && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {staff.name}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(staff.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -706,9 +718,14 @@ const Staff = () => {
                 classNamePrefix="rs"
                 options={roleOptions}
                 value={roleOptions.find(o => o.value === formData.role)}
-                onChange={(opt) => setFormData({ ...formData, role: (opt as any)?.value })}
+                onChange={(opt) => {
+                  const val = (opt as any)?.value;
+                  console.log('Edit role selected:', val);
+                  setFormData({ ...formData, role: val });
+                }}
                 styles={selectStyles}
                 menuPortalTarget={document.body}
+                menuShouldBlockScroll
                 placeholder="Select role"
               />
               {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
