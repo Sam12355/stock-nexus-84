@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, LineChart, PieChart, TrendingUp, Package, Users, AlertTriangle, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, LineChart as RechartsLineChart, Line } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AnalyticsData {
   totalItems: number;
@@ -26,15 +27,9 @@ const Analytics = () => {
     movementTrends: [],
     topItems: []
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (profile) {
-      fetchAnalyticsData();
-    }
-  }, [profile]);
-
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
@@ -157,7 +152,13 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchAnalyticsData();
+    }
+  }, [profile, fetchAnalyticsData]);
 
   return (
     <div className="space-y-6">
@@ -173,7 +174,11 @@ const Analytics = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalItems}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{analytics.totalItems}</div>
+            )}
             <p className="text-xs text-muted-foreground">Items in inventory</p>
           </CardContent>
         </Card>
@@ -184,7 +189,11 @@ const Analytics = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.lowStockItems}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{analytics.lowStockItems}</div>
+            )}
             <p className="text-xs text-muted-foreground">Below threshold</p>
           </CardContent>
         </Card>
@@ -195,7 +204,11 @@ const Analytics = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.activeUsers}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{analytics.activeUsers}</div>
+            )}
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
@@ -206,7 +219,11 @@ const Analytics = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.stockMovements}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{analytics.stockMovements}</div>
+            )}
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
@@ -223,7 +240,11 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              {analytics.categoryData.length > 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Skeleton className="h-32 w-32 rounded-full" />
+                </div>
+              ) : analytics.categoryData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <Pie
@@ -259,7 +280,14 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              {analytics.movementTrends.length > 0 ? (
+              {loading ? (
+                <div className="space-y-2 p-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ) : analytics.movementTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsLineChart data={analytics.movementTrends}>
                     <CartesianGrid strokeDasharray="3 3" />

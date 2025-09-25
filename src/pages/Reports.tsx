@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Download, Calendar, TrendingUp, Package, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StockReport {
   id: string;
@@ -30,15 +31,9 @@ const Reports = () => {
   const [stockReport, setStockReport] = useState<StockReport[]>([]);
   const [movementReport, setMovementReport] = useState<MovementReport[]>([]);
   const [selectedReport, setSelectedReport] = useState('stock');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (profile) {
-      fetchReportData();
-    }
-  }, [profile, selectedReport]);
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
@@ -113,7 +108,13 @@ const Reports = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, selectedReport]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchReportData();
+    }
+  }, [profile, fetchReportData]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -189,7 +190,26 @@ const Reports = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8">Loading stock data...</div>
+              <div className="space-y-3">
+                <div className="flex gap-4 border-b pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : stockReport.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No stock data found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -230,7 +250,26 @@ const Reports = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8">Loading movement data...</div>
+              <div className="space-y-3">
+                <div className="flex gap-4 border-b pb-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : movementReport.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No movement data found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">

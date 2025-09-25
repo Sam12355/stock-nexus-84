@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, User, Package, Truck, AlertCircle, CheckCircle, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ActivityLog {
   id: string;
@@ -34,17 +35,10 @@ const ActivityLogs = () => {
     alertsGenerated: 0,
     activeUsers: 0
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>('all');
 
-  useEffect(() => {
-    if (profile) {
-      fetchActivityLogs();
-      fetchActivitySummary();
-    }
-  }, [profile, filterType]);
-
-  const fetchActivityLogs = async () => {
+  const fetchActivityLogs = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
@@ -130,9 +124,9 @@ const ActivityLogs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, filterType]);
 
-  const fetchActivitySummary = async () => {
+  const fetchActivitySummary = useCallback(async () => {
     if (!profile) return;
 
     try {
@@ -178,7 +172,14 @@ const ActivityLogs = () => {
     } catch (error) {
       console.error('Error fetching activity summary:', error);
     }
-  };
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchActivityLogs();
+      fetchActivitySummary();
+    }
+  }, [profile, fetchActivityLogs, fetchActivitySummary]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -242,7 +243,11 @@ const ActivityLogs = () => {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.todayActivities}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{summary.todayActivities}</div>
+            )}
             <p className="text-xs text-muted-foreground">Total actions today</p>
           </CardContent>
         </Card>
@@ -253,7 +258,11 @@ const ActivityLogs = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.stockMovements}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{summary.stockMovements}</div>
+            )}
             <p className="text-xs text-muted-foreground">In/Out operations today</p>
           </CardContent>
         </Card>
@@ -264,7 +273,11 @@ const ActivityLogs = () => {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.alertsGenerated}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{summary.alertsGenerated}</div>
+            )}
             <p className="text-xs text-muted-foreground">Today's notifications</p>
           </CardContent>
         </Card>
@@ -275,7 +288,11 @@ const ActivityLogs = () => {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.activeUsers}</div>
+            {loading ? (
+              <Skeleton className="h-8 w-16 mb-1" />
+            ) : (
+              <div className="text-2xl font-bold">{summary.activeUsers}</div>
+            )}
             <p className="text-xs text-muted-foreground">Accessed today</p>
           </CardContent>
         </Card>
@@ -289,7 +306,25 @@ const ActivityLogs = () => {
         <CardContent>
           <ScrollArea className="h-96 w-full">
             {loading ? (
-              <div className="text-center py-8">Loading activities...</div>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-start space-x-4 rounded-lg border p-4">
+                    <Skeleton className="h-4 w-4 rounded-full mt-1" />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                      <Skeleton className="h-3 w-full" />
+                      <div className="flex items-center space-x-4">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : activities.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No activities found
