@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalItems: number;
@@ -58,6 +59,7 @@ interface WeatherData {
 
 const Index = () => {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalItems: 0,
     lowStockItems: 0,
@@ -198,24 +200,50 @@ const Index = () => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.event_date) return;
+    if (!newEvent.title) {
+      toast({
+        title: "Title is required",
+        description: "Please enter a title for the event.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!newEvent.event_date) {
+      toast({
+        title: "Date is required",
+        description: "Please pick a date and time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Ensure branch assignment per security policies
+    if (!profile?.branch_id) {
+      toast({
+        title: "Profile missing branch",
+        description: "Assign a branch to your profile to add events.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      // For admin users without branch_id, use a default branch or allow null
       const eventData = {
-        title: newEvent.title,
-        description: newEvent.description,
+        title: newEvent.title.trim(),
+        description: newEvent.description?.trim() || null,
         event_date: format(newEvent.event_date, 'yyyy-MM-dd'),
         event_type: newEvent.event_type,
-        branch_id: profile?.branch_id || null, // Allow null for admin users
-        created_by: profile?.id
-      };
+        branch_id: profile.branch_id,
+        created_by: profile.id
+      } as const;
 
       const { error } = await supabase
         .from('calendar_events')
         .insert([eventData]);
 
       if (error) throw error;
+
+      toast({ title: "Event added", description: "Your event has been created." });
 
       // Refresh events
       fetchDashboardData();
@@ -226,8 +254,13 @@ const Index = () => {
         event_date: new Date(),
         event_type: 'reminder'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding event:', error);
+      toast({
+        title: "Failed to add event",
+        description: error?.message || 'An unexpected error occurred',
+        variant: "destructive",
+      });
     }
   };
 
