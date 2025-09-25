@@ -63,7 +63,12 @@ const Analytics = () => {
       });
 
       const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
-      const formatCategory = (raw: string) => raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const formatCategory = (raw: string) => {
+        let n = raw.replace(/_/g, ' ').trim();
+        n = n.replace(/\s*items$/i, '').trim();
+        n = n.charAt(0).toUpperCase() + n.slice(1);
+        return `${n} items`;
+      };
       const categoryData = Object.entries(categoryCount).map(([name, value], index) => ({
         name: formatCategory(name),
         value,

@@ -31,11 +31,19 @@ const Reports = () => {
   const [stockReport, setStockReport] = useState<StockReport[]>([]);
   const [movementReport, setMovementReport] = useState<MovementReport[]>([]);
   const [selectedReport, setSelectedReport] = useState('stock');
-  const [loading, setLoading] = useState(true);
+  const [loadingStock, setLoadingStock] = useState(false);
+  const [loadingMovements, setLoadingMovements] = useState(false);
+  const [stockLoaded, setStockLoaded] = useState(false);
+  const [movementsLoaded, setMovementsLoaded] = useState(false);
 
   const fetchReportData = useCallback(async () => {
     if (!profile) return;
-    setLoading(selectedReport === 'stock' ? stockReport.length === 0 : movementReport.length === 0);
+    // Set loading only when first loading that report type
+    if (selectedReport === 'stock') {
+      if (!stockLoaded) setLoadingStock(true);
+    } else {
+      if (!movementsLoaded) setLoadingMovements(true);
+    }
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
@@ -76,6 +84,7 @@ const Reports = () => {
         });
 
         setStockReport(stockData);
+        setStockLoaded(true);
       } else if (selectedReport === 'movements') {
         const { data, error } = await supabase
           .from('stock_movements')
@@ -103,11 +112,13 @@ const Reports = () => {
         }));
 
         setMovementReport(movementData);
+        setMovementsLoaded(true);
       }
     } catch (error) {
       console.error('Error fetching report data:', error);
     } finally {
-      setLoading(false);
+      if (selectedReport === 'stock') setLoadingStock(false);
+      else setLoadingMovements(false);
     }
   }, [profile, selectedReport]);
 
@@ -163,7 +174,7 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-        <Button onClick={exportReport} disabled={selectedReport === 'stock' ? (loading && stockReport.length === 0) : (loading && movementReport.length === 0)}>
+        <Button onClick={exportReport} disabled={selectedReport === 'stock' ? (loadingStock && !stockLoaded) : (loadingMovements && !movementsLoaded)}>
           <Download className="h-4 w-4 mr-2" />
           Export Report
         </Button>
@@ -190,7 +201,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(loading && stockReport.length === 0) ? (
+            {(loadingStock && !stockLoaded) ? (
               <div className="space-y-3">
                 <div className="flex gap-4 border-b pb-2">
                   <Skeleton className="h-4 w-24" />
@@ -250,7 +261,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(loading && movementReport.length === 0) ? (
+            {(loadingMovements && !movementsLoaded) ? (
               <div className="space-y-3">
                 <div className="flex gap-4 border-b pb-2">
                   <Skeleton className="h-4 w-20" />
