@@ -11,7 +11,8 @@ import {
   Settings,
   LogOut,
   Package2,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import {
   Sidebar,
@@ -54,7 +55,7 @@ const menuItems = [
   {
     title: "Reports",
     url: "/reports",
-    icon: BarChart3,
+    icon: FileText,
     roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {

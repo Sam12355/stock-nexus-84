@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
-import { Loader2, Bell, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { SlideshowHeader } from '@/components/SlideshowHeader';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationsDropdown } from '@/components/NotificationsDropdown';
+import { SearchDropdown } from '@/components/SearchDropdown';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -58,20 +59,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             
             <div className="flex items-center gap-2 md:gap-4">
-              <div className="relative hidden lg:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search inventory..."
-                  className="pl-9 w-64 bg-background"
-                />
+              <div className="hidden lg:block">
+                <SearchDropdown />
               </div>
               
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full text-[10px] text-destructive-foreground flex items-center justify-center">
-                  3
-                </span>
-              </Button>
+              <ThemeToggle />
+              <NotificationsDropdown />
             </div>
           </header>
 

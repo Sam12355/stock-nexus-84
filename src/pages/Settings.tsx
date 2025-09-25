@@ -517,18 +517,6 @@ const Settings = () => {
               </div>
             </div>
 
-            {profileData.phone && (
-              <div className="pt-4 border-t">
-                <Button 
-                  onClick={sendTestHelloMessage} 
-                  disabled={testMessageLoading}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {testMessageLoading ? "Sending..." : "Send Test WhatsApp Message"}
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
