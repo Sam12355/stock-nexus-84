@@ -47,6 +47,7 @@ const Settings = () => {
   // Guards against state being reset after user edits
   const [profileInitialized, setProfileInitialized] = useState(false);
   const [hasTouchedNotifications, setHasTouchedNotifications] = useState(false);
+  const [hasTouchedBranch, setHasTouchedBranch] = useState(false);
 
   // Profile settings
   const [profileData, setProfileData] = useState({
@@ -93,7 +94,9 @@ const Settings = () => {
       if (error) throw error;
 
       if (data) {
-        setBranch(data as Branch);
+        if (!hasTouchedBranch) {
+          setBranch(data as Branch);
+        }
         if (!hasTouchedNotifications) {
           setNotifications((prev) => ({
             ...prev,
@@ -353,9 +356,10 @@ const Settings = () => {
                     <Input
                       value={branch.name}
                       maxLength={120}
-                      onChange={(e) =>
-                        setBranch((prev) => (prev ? { ...prev, name: e.target.value } : prev))
-                      }
+                      onChange={(e) => {
+                        setHasTouchedBranch(true);
+                        setBranch((prev) => (prev ? { ...prev, name: e.target.value } : prev));
+                      }}
                     />
                   </div>
 
@@ -364,9 +368,10 @@ const Settings = () => {
                     <Input
                       value={branch.location || ""}
                       maxLength={120}
-                      onChange={(e) =>
-                        setBranch((prev) => (prev ? { ...prev, location: e.target.value } : prev))
-                      }
+                      onChange={(e) => {
+                        setHasTouchedBranch(true);
+                        setBranch((prev) => (prev ? { ...prev, location: e.target.value } : prev));
+                      }}
                     />
                   </div>
 
