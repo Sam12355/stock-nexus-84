@@ -74,6 +74,8 @@ const Items = () => {
     threshold_level: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   const fetchItems = async () => {
     try {
@@ -130,6 +132,15 @@ const Items = () => {
     if (!validateForm()) return;
 
     try {
+      if (profile?.role === 'admin' && !selectedBranchId) {
+        toast({
+          title: "Branch required",
+          description: "Please select a branch for this item.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const itemData = {
         name: formData.name.trim(),
         category: formData.category,
@@ -137,7 +148,7 @@ const Items = () => {
         image_url: formData.image_url.trim() || null,
         storage_temperature: formData.storage_temperature ? parseFloat(formData.storage_temperature) : null,
         threshold_level: parseInt(formData.threshold_level),
-        branch_id: profile?.role === 'admin' ? null : profile?.branch_id,
+        branch_id: profile?.role === 'admin' ? selectedBranchId : profile?.branch_id,
         created_by: profile?.user_id
       };
 
@@ -246,8 +257,17 @@ const Items = () => {
   useEffect(() => {
     if (canManageItems) {
       fetchItems();
+      if (profile?.role === 'admin') {
+        supabase
+          .from('branches')
+          .select('id,name')
+          .order('name', { ascending: true })
+          .then(({ data, error }) => {
+            if (!error) setBranches(data || []);
+          });
+      }
     }
-  }, [canManageItems]);
+  }, [canManageItems, profile?.role]);
 
   if (!canManageItems) {
     return (
@@ -305,7 +325,25 @@ const Items = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {formErrors.category && <p className="text-sm text-red-500 mt-1">{formErrors.category}</p>}
+                 {formErrors.category && <p className="text-sm text-red-500 mt-1">{formErrors.category}</p>}
+
+                 {profile?.role === 'admin' && (
+                   <div className="mt-2">
+                     <Label htmlFor="branch">Branch *</Label>
+                     <Select onValueChange={(value) => setSelectedBranchId(value)}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select branch" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {branches.map((b) => (
+                           <SelectItem key={b.id} value={b.id}>
+                             {b.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 )}
               </div>
 
               <div>

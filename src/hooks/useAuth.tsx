@@ -51,15 +51,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .single();
 
-      // Update access tracking
+      // Update access tracking once per day per user
       if (data) {
-        await supabase
-          .from('profiles')
-          .update({ 
-            last_access: new Date().toISOString(),
-            access_count: (data.access_count || 0) + 1 
-          })
-          .eq('user_id', user.id);
+        const trackKey = `access-tracked:${user.id}:${new Date().toDateString()}`;
+        if (!localStorage.getItem(trackKey)) {
+          await supabase
+            .from('profiles')
+            .update({ 
+              last_access: new Date().toISOString(),
+              access_count: (data.access_count || 0) + 1 
+            })
+            .eq('user_id', user.id);
+          localStorage.setItem(trackKey, '1');
+        }
       }
 
       console.log('Profile query result:', { data, error });
@@ -189,11 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile();
-          }, 0);
-        } else {
+        if (!session?.user) {
           setProfile(null);
         }
       }

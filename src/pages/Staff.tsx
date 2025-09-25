@@ -61,6 +61,8 @@ const Staff = () => {
     photo_url: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   const fetchStaffMembers = async () => {
     try {
@@ -135,17 +137,26 @@ const Staff = () => {
         setIsEditModalOpen(false);
       } else {
         // Create new staff member profile directly
+        // Ensure branch selection for admins
+        if (profile?.role === 'admin' && !selectedBranchId) {
+          toast({
+            title: "Branch required",
+            description: "Please select a branch for this staff member.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('profiles')
-          .insert([{
+          .insert([{ 
             name: formData.name.trim(),
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
-            branch_id: profile?.branch_id,
-            user_id: crypto.randomUUID(), // Generate a temporary UUID for demonstration
+            branch_id: profile?.role === 'admin' ? selectedBranchId : profile?.branch_id,
             access_count: 0
           }]);
 
@@ -232,8 +243,17 @@ const Staff = () => {
   useEffect(() => {
     if (canManageStaff) {
       fetchStaffMembers();
+      if (profile?.role === 'admin') {
+        supabase
+          .from('branches')
+          .select('id,name')
+          .order('name', { ascending: true })
+          .then(({ data, error }) => {
+            if (!error) setBranches(data || []);
+          });
+      }
     }
-  }, [canManageStaff]);
+  }, [canManageStaff, profile?.role]);
 
   if (!canManageStaff) {
     return (
@@ -327,6 +347,24 @@ const Staff = () => {
                   </SelectContent>
                 </Select>
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
+
+                {profile?.role === 'admin' && (
+                  <div className="mt-2">
+                    <Label htmlFor="branch">Branch *</Label>
+                    <Select onValueChange={(value) => setSelectedBranchId(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div>

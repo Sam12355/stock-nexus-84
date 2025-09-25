@@ -273,7 +273,7 @@ export type Database = {
           position: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           access_count?: number | null
@@ -288,7 +288,7 @@ export type Database = {
           position?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           access_count?: number | null
@@ -303,7 +303,7 @@ export type Database = {
           position?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
