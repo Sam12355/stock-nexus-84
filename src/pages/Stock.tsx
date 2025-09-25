@@ -33,6 +33,7 @@ const Stock = () => {
   const [movementType, setMovementType] = useState<'in' | 'out'>('in');
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
+  const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
 
   const fetchStockData = async () => {
     try {
@@ -83,15 +84,18 @@ const Stock = () => {
       // Refresh stock data
       fetchStockData();
       
-      // Reset form
+      // Reset form and close dialog
       setSelectedItem(null);
       setQuantity('');
       setReason('');
+      setMovementType('in');
+      setIsMovementDialogOpen(false);
     } catch (error) {
       console.error('Error updating stock:', error);
+      const errMsg = (error as any)?.message || "Failed to update stock";
       toast({
         title: "Error",
-        description: "Failed to update stock",
+        description: errMsg,
         variant: "destructive",
       });
     }
@@ -125,7 +129,7 @@ const Stock = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Stock Management</h1>
-        <Dialog>
+        <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
