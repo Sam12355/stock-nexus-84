@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Home,
   Users,
@@ -72,10 +73,11 @@ const menuItems = [
 
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === 'collapsed';
+  const isMobile = useIsMobile();
 
   const isActive = (path: string) => {
     if (path === '/' && currentPath === '/') return true;
@@ -88,7 +90,7 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className="border-r border-border bg-sidebar">
+    <Sidebar className="bg-sidebar md:border-r md:border-border">
       <SidebarContent className="p-4">
         {/* Logo/Brand */}
         <div className="flex items-center gap-2 px-4 py-6 border-b border-sidebar-border mb-4">
@@ -114,6 +116,11 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       className={`sidebar-nav-item ${isActive(item.url) ? 'active' : ''}`}
+                      onClick={() => {
+                        if (isMobile) {
+                          setOpen(false);
+                        }
+                      }}
                     >
                       <item.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{item.title}</span>}

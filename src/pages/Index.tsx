@@ -403,7 +403,7 @@ const Index = () => {
     <>
       {/* Full-screen glassmorphism overlay for branch selection */}
       {showBranchSelection && (
-        <div className="fixed inset-0 bg-gradient-to-br from-background/40 via-background/30 to-background/40 backdrop-blur-md backdrop-saturate-150 z-40" />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-[8px] z-40" />
       )}
       
       <div className="space-y-6">
