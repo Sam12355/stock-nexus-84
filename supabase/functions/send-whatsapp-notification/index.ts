@@ -14,7 +14,7 @@ const TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'; // Twilio Sandbox number
 interface WhatsAppNotificationRequest {
   phoneNumber: string;
   message: string;
-  type: 'stock_alert' | 'event_reminder' | 'general';
+  type: 'stock_alert' | 'event_reminder' | 'whatsapp';
   itemName?: string;
   currentQuantity?: number;
   thresholdLevel?: number;

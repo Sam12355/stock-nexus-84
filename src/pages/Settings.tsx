@@ -301,7 +301,7 @@ const Settings = () => {
         body: {
           phoneNumber: phone,
           message: `Welcome to ${branch?.name || 'your branch'} inventory management! WhatsApp notifications are now enabled for stock alerts and reminders.`,
-          type: 'general'
+          type: 'whatsapp'
         }
       });
 
@@ -332,7 +332,7 @@ const Settings = () => {
         body: {
           phoneNumber: profileData.phone,
           message: 'Hello! This is a test message from your inventory management system.',
-          type: 'general'
+          type: 'whatsapp'
         }
       });
 
