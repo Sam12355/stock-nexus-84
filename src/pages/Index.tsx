@@ -422,6 +422,66 @@ const Index = () => {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
   }
 
+  // Admin Dashboard - Limited view with only greeting and weather
+  if (extendedProfile?.role === 'admin') {
+    return (
+      <div className="space-y-6">
+        {/* Welcome Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome, {extendedProfile?.name || 'Administrator'}! You have administrative access to manage staff.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Activity className="h-4 w-4" />
+            Today: {new Date().toLocaleDateString()}
+          </div>
+        </div>
+
+        {/* Weather Widget */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Current Weather</CardTitle>
+              <Cloud className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {weatherLoading ? (
+                <div className="space-y-2">
+                  <div className="h-8 bg-muted animate-pulse rounded" />
+                  <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                </div>
+              ) : weather ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-5 w-5 text-orange-500" />
+                    <span className="text-2xl font-bold">{Math.round(weather.temperature)}°C</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground capitalize">{weather.description}</p>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Droplets className="h-3 w-3" />
+                      <span>{weather.humidity}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Wind className="h-3 w-3" />
+                      <span>{Math.round(weather.windSpeed * 3.6)}km/h</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{weather.city}, {weather.country}</p>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">Weather data unavailable</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Full-screen glassmorphism overlay for branch selection */}

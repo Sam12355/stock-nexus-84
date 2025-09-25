@@ -55,6 +55,11 @@ export function NotificationsDropdown() {
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
+      if (!branchId) {
+        setNotifications([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -74,6 +79,11 @@ export function NotificationsDropdown() {
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
+      if (!branchId) {
+        setEvents([]);
+        return;
+      }
+
       const today = new Date().toISOString().split('T')[0];
       const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -98,6 +108,10 @@ export function NotificationsDropdown() {
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
+      if (!branchId) {
+        setStockAlerts([]);
+        return;
+      }
       
       const { data, error } = await supabase
         .from('items')

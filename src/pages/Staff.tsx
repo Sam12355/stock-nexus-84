@@ -275,7 +275,7 @@ const Staff = () => {
     staff.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canManageStaff = profile?.role === 'regional_manager' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
+  const canManageStaff = profile && ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager'].includes(profile.role);
 
   useEffect(() => {
     if (canManageStaff) {

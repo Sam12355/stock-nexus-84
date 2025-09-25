@@ -36,7 +36,7 @@ const App = () => (
               <Route path="/staff" element={<DashboardLayout><Staff /></DashboardLayout>} />
               <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
               <Route path="/analytics" element={<DashboardLayout><Analytics /></DashboardLayout>} />
-              <Route path="/activity" element={<DashboardLayout><ActivityLogs /></DashboardLayout>} />
+              <Route path="/activity-logs" element={<DashboardLayout><ActivityLogs /></DashboardLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
