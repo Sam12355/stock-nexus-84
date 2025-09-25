@@ -117,6 +117,9 @@ const Stock = () => {
         description: `Stock ${movementType === 'in' ? 'added' : 'removed'} successfully`,
       });
 
+      // Check if stock alert should be sent
+      await checkAndSendStockAlert(selectedItem, data.new_quantity);
+
       // Refresh stock data
       fetchStockData();
       
@@ -135,6 +138,51 @@ const Stock = () => {
         description: errMsg,
         variant: "destructive",
       });
+    }
+  };
+
+  const checkAndSendStockAlert = async (item: StockItem, newQuantity: number) => {
+    const threshold = item.items.threshold_level;
+    let alertType: 'low' | 'critical' | null = null;
+
+    if (newQuantity <= threshold * 0.5) {
+      alertType = 'critical';
+    } else if (newQuantity <= threshold) {
+      alertType = 'low';
+    }
+
+    if (alertType) {
+      try {
+        console.log('Sending stock alert:', {
+          itemName: item.items.name,
+          currentQuantity: newQuantity,
+          thresholdLevel: threshold,
+          alertType,
+          branchId: item.items.branch_id
+        });
+
+        const { data, error } = await supabase.functions.invoke('send-stock-alert', {
+          body: {
+            itemName: item.items.name,
+            currentQuantity: newQuantity,
+            thresholdLevel: threshold,
+            alertType,
+            branchId: item.items.branch_id
+          }
+        });
+
+        if (error) {
+          console.error('Stock alert failed:', error);
+        } else {
+          console.log('Stock alert sent successfully:', data);
+          toast({
+            title: "Stock Alert Sent",
+            description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent via WhatsApp`,
+          });
+        }
+      } catch (error) {
+        console.error('Error sending stock alert:', error);
+      }
     }
   };
 
@@ -162,6 +210,9 @@ const Stock = () => {
         title: "Success",
         description: `Stock ${action === 'in' ? 'added' : 'removed'} successfully`,
       });
+
+      // Check if stock alert should be sent
+      await checkAndSendStockAlert(item, data.new_quantity);
 
       fetchStockData();
       setQuantity('');

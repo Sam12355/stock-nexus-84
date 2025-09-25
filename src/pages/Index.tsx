@@ -325,6 +325,29 @@ const Index = () => {
 
       toast({ title: "Event added", description: "Your event has been created." });
 
+      // Send immediate event reminder notification
+      if (newEvent.title && selectedBranchId) {
+        try {
+          await supabase.functions.invoke('send-event-reminder', {
+            body: {
+              eventTitle: newEvent.title,
+              eventDescription: newEvent.description,
+              eventDate: newEvent.event_date?.toISOString(),
+              eventType: newEvent.event_type,
+              branchId: selectedBranchId,
+              reminderType: 'immediate'
+            }
+          });
+          
+          toast({
+            title: "Event Created & Notification Sent",
+            description: "Event created successfully and WhatsApp notifications sent to team members",
+          });
+        } catch (error) {
+          console.error('Event reminder notification failed:', error);
+        }
+      }
+
       // Refresh events
       fetchDashboardData();
       setShowEventModal(false);
