@@ -146,7 +146,7 @@ const Stock = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Choose an item" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-lg z-50">
                     {stockItems.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.items.name} (Current: {item.current_quantity})
@@ -164,7 +164,7 @@ const Stock = () => {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="in">Stock In</SelectItem>
                         <SelectItem value="out">Stock Out</SelectItem>
                       </SelectContent>
