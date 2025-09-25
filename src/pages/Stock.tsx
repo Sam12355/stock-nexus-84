@@ -153,6 +153,24 @@ const Stock = () => {
 
     if (alertType && profile?.phone) {
       try {
+        // Check if WhatsApp notifications are enabled for the branch
+        const branchId = profile.branch_id || profile.branch_context;
+        if (!branchId) {
+          console.log('No branch ID found, skipping stock alert');
+          return;
+        }
+
+        const { data: branchData, error: branchError } = await supabase
+          .from('branches')
+          .select('notification_settings')
+          .eq('id', branchId)
+          .single();
+
+        if (branchError || !branchData?.notification_settings?.whatsapp) {
+          console.log('WhatsApp notifications disabled for branch, skipping stock alert');
+          return;
+        }
+
         // Prepare WhatsApp message (same format as the edge function)
         const urgencyText = alertType === 'critical' ? '🚨 CRITICAL' : '⚠️ LOW STOCK';
         const message = `${urgencyText} ALERT
@@ -166,7 +184,10 @@ ${alertType === 'critical'
   : '📈 Action needed: Please consider restocking soon.'
 }
 
-Time: ${new Date().toLocaleString()}`;
+Time: ${new Date().toLocaleString()}
+
+_Sent by_
+_Sushi Yama Inventory System_`;
 
         console.log('Sending stock alert via WhatsApp:', {
           itemName: item.items.name,
