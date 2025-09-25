@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,8 @@ const Settings = () => {
   const [profileInitialized, setProfileInitialized] = useState(false);
   const [hasTouchedNotifications, setHasTouchedNotifications] = useState(false);
   const [hasTouchedBranch, setHasTouchedBranch] = useState(false);
+  const hasTouchedNotificationsRef = useRef(false);
+  const hasTouchedBranchRef = useRef(false);
 
   // Profile settings
   const [profileData, setProfileData] = useState({
@@ -81,23 +83,30 @@ const Settings = () => {
       });
       setProfileInitialized(true);
     }
-    if (profile) fetchBranchSettings();
   }, [profile, profileInitialized]);
+
+  useEffect(() => {
+    if (profile?.branch_id || profile?.branch_context) {
+      fetchBranchSettings();
+    } else {
+      setBranch(null);
+    }
+  }, [profile?.branch_id, profile?.branch_context]);
 
   const fetchBranchSettings = async () => {
     if (!profile?.branch_id && !profile?.branch_context) return;
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
-      const { data, error } = await supabase.from("branches").select("*").eq("id", branchId).single();
+      const { data, error } = await supabase.from("branches").select("*").eq("id", branchId).maybeSingle();
 
       if (error) throw error;
 
       if (data) {
-        if (!hasTouchedBranch) {
+        if (!hasTouchedBranchRef.current) {
           setBranch(data as Branch);
         }
-        if (!hasTouchedNotifications) {
+        if (!hasTouchedNotificationsRef.current) {
           setNotifications((prev) => ({
             ...prev,
             email: data.notification_settings?.email ?? true,
@@ -272,7 +281,8 @@ const Settings = () => {
                   checked={notifications.stockAlerts}
                   onCheckedChange={(checked) => {
                     setHasTouchedNotifications(true);
-                    setNotifications({ ...notifications, stockAlerts: checked });
+                    hasTouchedNotificationsRef.current = true;
+                    setNotifications((prev) => ({ ...prev, stockAlerts: checked }));
                   }}
                 />
               </div>
@@ -286,7 +296,8 @@ const Settings = () => {
                   checked={notifications.eventReminders}
                   onCheckedChange={(checked) => {
                     setHasTouchedNotifications(true);
-                    setNotifications({ ...notifications, eventReminders: checked });
+                    hasTouchedNotificationsRef.current = true;
+                    setNotifications((prev) => ({ ...prev, eventReminders: checked }));
                   }}
                 />
               </div>
@@ -300,7 +311,8 @@ const Settings = () => {
                   checked={notifications.email}
                   onCheckedChange={(checked) => {
                     setHasTouchedNotifications(true);
-                    setNotifications({ ...notifications, email: checked });
+                    hasTouchedNotificationsRef.current = true;
+                    setNotifications((prev) => ({ ...prev, email: checked }));
                   }}
                 />
               </div>
@@ -314,7 +326,8 @@ const Settings = () => {
                   checked={notifications.sms}
                   onCheckedChange={(checked) => {
                     setHasTouchedNotifications(true);
-                    setNotifications({ ...notifications, sms: checked });
+                    hasTouchedNotificationsRef.current = true;
+                    setNotifications((prev) => ({ ...prev, sms: checked }));
                   }}
                 />
               </div>
@@ -328,7 +341,8 @@ const Settings = () => {
                   checked={notifications.whatsapp}
                   onCheckedChange={(checked) => {
                     setHasTouchedNotifications(true);
-                    setNotifications({ ...notifications, whatsapp: checked });
+                    hasTouchedNotificationsRef.current = true;
+                    setNotifications((prev) => ({ ...prev, whatsapp: checked }));
                   }}
                 />
               </div>
@@ -358,6 +372,7 @@ const Settings = () => {
                       maxLength={120}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
+                        hasTouchedBranchRef.current = true;
                         setBranch((prev) => (prev ? { ...prev, name: e.target.value } : prev));
                       }}
                     />
@@ -370,6 +385,7 @@ const Settings = () => {
                       maxLength={120}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
+                        hasTouchedBranchRef.current = true;
                         setBranch((prev) => (prev ? { ...prev, location: e.target.value } : prev));
                       }}
                     />
