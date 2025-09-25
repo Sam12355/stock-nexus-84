@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Package, TrendingUp, AlertTriangle, Plus, Minus, Eye } from "lucide-react";
+import ReactSelect from 'react-select';
 
 interface StockItem {
   id: string;
@@ -21,6 +22,7 @@ interface StockItem {
     name: string;
     category: string;
     threshold_level: number;
+    image_url?: string;
   };
 }
 
@@ -35,6 +37,7 @@ const Stock = () => {
   const [reason, setReason] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
+  const [quickActionItem, setQuickActionItem] = useState<StockItem | null>(null);
 
   const fetchStockData = async () => {
     try {
@@ -45,7 +48,8 @@ const Stock = () => {
           items (
             name,
             category,
-            threshold_level
+            threshold_level,
+            image_url
           )
         `)
         .order('last_updated', { ascending: false });
@@ -103,6 +107,45 @@ const Stock = () => {
     }
   };
 
+  const handleQuickStockAction = async (item: StockItem, action: 'in' | 'out') => {
+    if (!quantity) {
+      toast({
+        title: "Error",
+        description: "Please enter a quantity first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('update_stock_quantity', {
+        p_item_id: item.item_id,
+        p_movement_type: action,
+        p_quantity: parseInt(quantity),
+        p_reason: `Quick ${action === 'in' ? 'stock in' : 'stock out'}`
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Stock ${action === 'in' ? 'added' : 'removed'} successfully`,
+      });
+
+      fetchStockData();
+      setQuantity('');
+      setQuickActionItem(null);
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      const errMsg = (error as any)?.message || "Failed to update stock";
+      toast({
+        title: "Error",
+        description: errMsg,
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStockStatus = (item: StockItem) => {
     const threshold = item.items.threshold_level;
     const current = item.current_quantity;
@@ -123,6 +166,7 @@ const Stock = () => {
   const lowStockItems = stockItems.filter(item => 
     item.current_quantity <= item.items.threshold_level
   );
+  
   // Filter items based on search term
   const filteredStockItems = stockItems.filter(item =>
     item.items.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,6 +176,13 @@ const Stock = () => {
   const criticalStockItems = stockItems.filter(item => 
     item.current_quantity <= item.items.threshold_level * 0.5
   );
+
+  // Prepare options for react-select
+  const selectOptions = filteredStockItems.map(item => ({
+    value: item.id,
+    label: `${item.items.name} (Current: ${item.current_quantity})`,
+    item: item
+  }));
 
   return (
     <div className="space-y-6">
@@ -151,34 +202,41 @@ const Stock = () => {
             <div className="space-y-4">
               <div>
                 <Label>Select Item</Label>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Search items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                  <Select onValueChange={(value) => {
-                    const item = stockItems.find(s => s.id === value);
-                    setSelectedItem(item || null);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an item" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg z-50">
-                      {filteredStockItems.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.items.name} (Current: {item.current_quantity})
-                        </SelectItem>
-                      ))}
-                      {filteredStockItems.length === 0 && (
-                        <div className="px-2 py-1 text-sm text-muted-foreground">
-                          No items found
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <ReactSelect
+                  options={selectOptions}
+                  placeholder="Search and select an item..."
+                  isSearchable={true}
+                  isClearable={true}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  onChange={(selectedOption) => {
+                    if (selectedOption) {
+                      setSelectedItem(selectedOption.item);
+                    } else {
+                      setSelectedItem(null);
+                    }
+                  }}
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      backgroundColor: 'hsl(var(--background))',
+                      borderColor: 'hsl(var(--border))',
+                      minHeight: '40px',
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      zIndex: 50,
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused ? 'hsl(var(--muted))' : 'hsl(var(--background))',
+                      color: 'hsl(var(--foreground))',
+                      cursor: 'pointer',
+                    }),
+                  }}
+                />
               </div>
               
               {selectedItem && (
@@ -275,11 +333,24 @@ const Stock = () => {
                   key={item.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.items.name}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {item.items.category}
-                    </p>
+                  <div className="flex items-center space-x-4">
+                    {item.items.image_url ? (
+                      <img 
+                        src={item.items.image_url} 
+                        alt={item.items.name}
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-medium">{item.items.name}</h3>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {item.items.category}
+                      </p>
+                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-4">
@@ -295,26 +366,67 @@ const Stock = () => {
                     </Badge>
                     
                     <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setMovementType('in');
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setMovementType('out');
-                        }}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
+                      {quickActionItem?.id === item.id ? (
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            placeholder="Qty"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            className="w-16 h-8 text-xs"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleQuickStockAction(item, 'in')}
+                            className="h-8 px-2"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleQuickStockAction(item, 'out')}
+                            className="h-8 px-2"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setQuickActionItem(null);
+                              setQuantity('');
+                            }}
+                            className="h-8 px-2"
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setQuickActionItem(item);
+                              setQuantity('');
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setQuickActionItem(item);
+                              setQuantity('');
+                            }}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
