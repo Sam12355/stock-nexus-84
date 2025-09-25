@@ -81,8 +81,8 @@ const Items = () => {
     try {
       let query = supabase.from('items').select('*');
       
-      // Filter by branch if not admin
-      if (profile?.role !== 'admin' && profile?.branch_id) {
+      // Filter by branch if not regional_manager
+      if (profile?.role !== 'regional_manager' && profile?.branch_id) {
         query = query.eq('branch_id', profile.branch_id);
       }
       
@@ -132,7 +132,7 @@ const Items = () => {
     if (!validateForm()) return;
 
     try {
-      if (profile?.role === 'admin' && !selectedBranchId) {
+      if (profile?.role === 'regional_manager' && !selectedBranchId) {
         toast({
           title: "Branch required",
           description: "Please select a branch for this item.",
@@ -148,7 +148,7 @@ const Items = () => {
         image_url: formData.image_url.trim() || null,
         storage_temperature: formData.storage_temperature ? parseFloat(formData.storage_temperature) : null,
         threshold_level: parseInt(formData.threshold_level),
-        branch_id: profile?.role === 'admin' ? selectedBranchId : profile?.branch_id,
+        branch_id: profile?.role === 'regional_manager' ? selectedBranchId : profile?.branch_id,
         created_by: profile?.id
       };
 
@@ -253,12 +253,12 @@ const Items = () => {
     item.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canManageItems = profile?.role === 'admin' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
+  const canManageItems = profile?.role === 'regional_manager' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
 
   useEffect(() => {
     if (canManageItems) {
       fetchItems();
-      if (profile?.role === 'admin') {
+      if (profile?.role === 'regional_manager') {
         supabase
           .from('branches')
           .select('id,name')
@@ -328,7 +328,7 @@ const Items = () => {
                 </Select>
                  {formErrors.category && <p className="text-sm text-red-500 mt-1">{formErrors.category}</p>}
 
-                 {profile?.role === 'admin' && (
+                 {profile?.role === 'regional_manager' && (
                    <div className="mt-2">
                      <Label htmlFor="branch">Branch *</Label>
                      <Select onValueChange={(value) => setSelectedBranchId(value)}>

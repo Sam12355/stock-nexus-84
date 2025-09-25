@@ -24,7 +24,7 @@ interface StaffMember {
   phone?: string;
   photo_url?: string;
   position?: string;
-  role: 'admin' | 'manager' | 'assistant_manager' | 'staff';
+  role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
   branch_id?: string;
   last_access?: string;
   access_count: number;
@@ -37,7 +37,7 @@ const staffSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   phone: z.string().optional(),
   position: z.string().optional(),
-  role: z.enum(['admin', 'manager', 'assistant_manager', 'staff'], {
+  role: z.enum(['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff'], {
     required_error: "Role is required"
   }),
   photo_url: z.string().url().optional().or(z.literal(""))
@@ -57,7 +57,7 @@ const Staff = () => {
     email: "",
     phone: "",
     position: "",
-    role: "staff" as 'admin' | 'manager' | 'assistant_manager' | 'staff',
+    role: "staff" as 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff',
     photo_url: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -138,7 +138,7 @@ const Staff = () => {
       } else {
         // Create new staff member profile directly
         // Ensure branch selection for admins
-        if (profile?.role === 'admin' && !selectedBranchId) {
+        if (profile?.role === 'regional_manager' && !selectedBranchId) {
           toast({
             title: "Branch required",
             description: "Please select a branch for this staff member.",
@@ -156,7 +156,7 @@ const Staff = () => {
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
-            branch_id: profile?.role === 'admin' ? selectedBranchId : profile?.branch_id,
+            branch_id: profile?.role === 'regional_manager' ? selectedBranchId : profile?.branch_id,
             access_count: 0
           }]);
 
@@ -211,7 +211,7 @@ const Staff = () => {
       email: "",
       phone: "",
       position: "",
-      role: "staff" as 'admin' | 'manager' | 'assistant_manager' | 'staff',
+      role: "staff" as 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff',
       photo_url: ""
     });
     setFormErrors({});
@@ -238,12 +238,12 @@ const Staff = () => {
     staff.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canManageStaff = profile?.role === 'admin' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
+  const canManageStaff = profile?.role === 'regional_manager' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
 
   useEffect(() => {
     if (canManageStaff) {
       fetchStaffMembers();
-      if (profile?.role === 'admin') {
+      if (profile?.role === 'regional_manager') {
         supabase
           .from('branches')
           .select('id,name')
@@ -341,14 +341,14 @@ const Staff = () => {
                   <SelectContent>
                     <SelectItem value="staff">Staff</SelectItem>
                     <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                    {profile?.role === 'admin' && (
+                    {profile?.role === 'regional_manager' && (
                       <SelectItem value="manager">Manager</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
 
-                {profile?.role === 'admin' && (
+                {profile?.role === 'regional_manager' && (
                   <div className="mt-2">
                     <Label htmlFor="branch">Branch *</Label>
                     <Select onValueChange={(value) => setSelectedBranchId(value)}>
@@ -603,7 +603,7 @@ const Staff = () => {
                 <SelectContent>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                  {profile?.role === 'admin' && (
+                  {profile?.role === 'regional_manager' && (
                     <SelectItem value="manager">Manager</SelectItem>
                   )}
                 </SelectContent>

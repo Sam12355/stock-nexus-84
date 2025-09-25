@@ -262,6 +262,7 @@ export type Database = {
       profiles: {
         Row: {
           access_count: number | null
+          branch_context: string | null
           branch_id: string | null
           created_at: string
           email: string
@@ -277,6 +278,7 @@ export type Database = {
         }
         Insert: {
           access_count?: number | null
+          branch_context?: string | null
           branch_id?: string | null
           created_at?: string
           email: string
@@ -292,6 +294,7 @@ export type Database = {
         }
         Update: {
           access_count?: number | null
+          branch_context?: string | null
           branch_id?: string | null
           created_at?: string
           email?: string

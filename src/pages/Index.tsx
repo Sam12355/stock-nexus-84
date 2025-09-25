@@ -111,23 +111,34 @@ const Index = () => {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [showBranchSelection, setShowBranchSelection] = useState(false);
 
-  const fetchDashboardData = async () => {
+  const fetchBranchesData = async () => {
     try {
-      // Check if Regional/District Manager needs to select branch context first
-      if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context) {
-        setShowBranchSelection(true);
-        return;
-      }
-
-      // Fetch branches for regional/district managers
       if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
-          .select('id, name')
+          .select('id, name, location')
           .order('name');
         
         if (branchesError) throw branchesError;
         setBranches(branchesData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      toast({
+        title: "Failed to load branches",
+        description: "Unable to fetch branch list",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      // Check if Regional/District Manager needs to select branch context first
+      if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context) {
+        await fetchBranchesData();
+        setShowBranchSelection(true);
+        return;
       }
 
       // ... keep existing code (items and stock data)
@@ -369,6 +380,12 @@ const Index = () => {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (showEventModal && branches.length === 0) {
+      fetchBranchesData();
+    }
+  }, [showEventModal]);
+
   console.log('Index component render - showEventModal:', showEventModal, 'profile role:', profile?.role);
 
   if (!profile) {
@@ -380,7 +397,7 @@ const Index = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-all duration-300 ${showBranchSelection ? 'blur-sm pointer-events-none' : ''}`}>
       {/* Welcome Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -643,7 +660,7 @@ const Index = () => {
 
       {/* Branch Selection Modal for Regional/District Managers */}
       <Dialog open={showBranchSelection} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md z-50">
           <DialogHeader>
             <DialogTitle>Select Your Branch</DialogTitle>
             <p className="text-sm text-muted-foreground">
@@ -653,18 +670,29 @@ const Index = () => {
           <div className="space-y-4">
             <div>
               <Label>Available Branches</Label>
-              <div className="grid gap-2 mt-2">
-                {branches.map((branch) => (
-                  <Button
-                    key={branch.id}
-                    variant="outline"
-                    onClick={() => handleBranchSelection(branch.id)}
-                    className="justify-start"
-                  >
-                    {branch.name}
-                  </Button>
-                ))}
-              </div>
+              {branches.length === 0 ? (
+                <div className="flex justify-center items-center h-20 text-muted-foreground">
+                  Loading branches...
+                </div>
+              ) : (
+                <div className="grid gap-2 mt-2 max-h-60 overflow-y-auto">
+                  {branches.map((branch) => (
+                    <Button
+                      key={branch.id}
+                      variant="outline"
+                      onClick={() => handleBranchSelection(branch.id)}
+                      className="justify-start p-4 h-auto"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{branch.name}</div>
+                        {branch.location && (
+                          <div className="text-xs text-muted-foreground">{branch.location}</div>
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
