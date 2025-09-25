@@ -238,9 +238,12 @@ const Settings = () => {
       
       setShowPhoneDialog(false);
       
+      // Send test WhatsApp notification
+      await sendTestWhatsAppNotification(tempPhone.trim());
+      
       toast({
         title: "Success",
-        description: "Phone number saved and WhatsApp notifications enabled",
+        description: "Phone number saved and WhatsApp notifications enabled. Check console for test message!",
       });
     } catch (error) {
       console.error("Error saving phone:", error);
@@ -251,6 +254,27 @@ const Settings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Send test WhatsApp notification
+  const sendTestWhatsAppNotification = async (phone: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
+        body: {
+          phoneNumber: phone,
+          message: `Welcome to ${branch?.name || 'your branch'} inventory management! WhatsApp notifications are now enabled for stock alerts and reminders.`,
+          type: 'general'
+        }
+      });
+
+      if (error) {
+        console.error('WhatsApp test error:', error);
+      } else {
+        console.log('WhatsApp test sent:', data);
+      }
+    } catch (error) {
+      console.error('Error sending test WhatsApp:', error);
     }
   };
 
