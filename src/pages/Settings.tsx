@@ -195,8 +195,38 @@ const Settings = () => {
     }
   };
 
+  // Save individual notification setting immediately
+  const saveNotificationSetting = async (settingType: 'email' | 'sms' | 'whatsapp', value: boolean) => {
+    if (!branch) return;
+
+    try {
+      const updatedSettings = {
+        ...branch.notification_settings,
+        [settingType]: value
+      };
+
+      const { error } = await supabase
+        .from("branches")
+        .update({
+          notification_settings: updatedSettings
+        })
+        .eq("id", branch.id);
+
+      if (error) throw error;
+
+      console.log(`${settingType} notification setting saved:`, value);
+    } catch (error) {
+      console.error(`Error saving ${settingType} notification setting:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to save ${settingType} notification setting`,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle WhatsApp notification toggle with phone validation
-  const handleWhatsAppToggle = (checked: boolean) => {
+  const handleWhatsAppToggle = async (checked: boolean) => {
     if (checked && (!profileData.phone || profileData.phone.trim() === "")) {
       setTempPhone("");
       setShowPhoneDialog(true);
@@ -206,6 +236,9 @@ const Settings = () => {
     setHasTouchedNotifications(true);
     hasTouchedNotificationsRef.current = true;
     setNotifications((prev) => ({ ...prev, whatsapp: checked }));
+    
+    // Immediately save the setting to the database
+    await saveNotificationSetting('whatsapp', checked);
   };
 
   // Save phone number and enable WhatsApp
@@ -232,10 +265,13 @@ const Settings = () => {
       // Update local state
       setProfileData(prev => ({ ...prev, phone: tempPhone.trim() }));
       
-      // Enable WhatsApp notifications
-      setHasTouchedNotifications(true);
-      hasTouchedNotificationsRef.current = true;
-      setNotifications((prev) => ({ ...prev, whatsapp: true }));
+       // Enable WhatsApp notifications
+       setHasTouchedNotifications(true);
+       hasTouchedNotificationsRef.current = true;
+       setNotifications((prev) => ({ ...prev, whatsapp: true }));
+       
+       // Save WhatsApp notification setting to database
+       await saveNotificationSetting('whatsapp', true);
       
       setShowPhoneDialog(false);
       
@@ -444,10 +480,11 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={notifications.email}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     setHasTouchedNotifications(true);
                     hasTouchedNotificationsRef.current = true;
                     setNotifications((prev) => ({ ...prev, email: checked }));
+                    await saveNotificationSetting('email', checked);
                   }}
                 />
               </div>
@@ -459,10 +496,11 @@ const Settings = () => {
                 </div>
                 <Switch
                   checked={notifications.sms}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     setHasTouchedNotifications(true);
                     hasTouchedNotificationsRef.current = true;
                     setNotifications((prev) => ({ ...prev, sms: checked }));
+                    await saveNotificationSetting('sms', checked);
                   }}
                 />
               </div>
