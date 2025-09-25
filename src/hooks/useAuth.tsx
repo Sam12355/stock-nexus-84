@@ -214,6 +214,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('realtime:profiles')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        // For updates/inserts, update local profile state
+        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+          // @ts-ignore - payload.new is typed as unknown by supabase-js
+          setProfile(payload.new as any);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const value = {
     user,
     session,
