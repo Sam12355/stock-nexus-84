@@ -36,6 +36,7 @@ const ActivityLogs = () => {
     activeUsers: 0
   });
   const [loading, setLoading] = useState(true);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
 
   const fetchActivityLogs = useCallback(async () => {
@@ -124,6 +125,7 @@ const ActivityLogs = () => {
       console.error('Error fetching activity logs:', error);
     } finally {
       setLoading(false);
+      setInitialLoaded(true);
     }
   }, [profile, filterType]);
 
@@ -307,7 +309,7 @@ const ActivityLogs = () => {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-96 w-full">
-            {loading ? (
+            {(loading && !initialLoaded) ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-start space-x-4 rounded-lg border p-4">

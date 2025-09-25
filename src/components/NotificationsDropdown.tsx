@@ -165,7 +165,7 @@ export function NotificationsDropdown() {
               <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground px-2 py-1">
                 Stock Alerts
               </DropdownMenuLabel>
-              <ScrollArea className="max-h-40 pr-2">
+              <div className="max-h-48 overflow-y-auto pr-2">
                 {stockAlerts.map((alert) => (
                   <DropdownMenuItem key={alert.id} className="flex items-start space-x-2 p-3">
                     <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
@@ -178,7 +178,7 @@ export function NotificationsDropdown() {
                     </div>
                   </DropdownMenuItem>
                 ))}
-              </ScrollArea>
+              </div>
               <DropdownMenuSeparator />
             </div>
           )}
@@ -189,7 +189,7 @@ export function NotificationsDropdown() {
               <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground px-2 py-1">
                 Upcoming Events
               </DropdownMenuLabel>
-              <ScrollArea className="max-h-40 pr-2">
+              <div className="max-h-48 overflow-y-auto pr-2">
                 {events.map((event) => (
                   <DropdownMenuItem key={event.id} className="flex items-start space-x-2 p-3">
                     <Calendar className="h-4 w-4 text-blue-500 mt-0.5" />
@@ -204,7 +204,7 @@ export function NotificationsDropdown() {
                     </div>
                   </DropdownMenuItem>
                 ))}
-              </ScrollArea>
+              </div>
               <DropdownMenuSeparator />
             </div>
           )}
@@ -215,7 +215,7 @@ export function NotificationsDropdown() {
               <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground px-2 py-1">
                 General Notifications
               </DropdownMenuLabel>
-              <ScrollArea className="max-h-40 pr-2">
+              <div className="max-h-48 overflow-y-auto pr-2">
                 {notifications.map((notification) => (
                   <DropdownMenuItem key={notification.id} className="flex items-start space-x-2 p-3">
                     <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
@@ -227,7 +227,7 @@ export function NotificationsDropdown() {
                     </div>
                   </DropdownMenuItem>
                 ))}
-              </ScrollArea>
+              </div>
             </div>
           )}
 

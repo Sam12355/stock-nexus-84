@@ -163,7 +163,7 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-        <Button onClick={exportReport} disabled={loading}>
+        <Button onClick={exportReport} disabled={selectedReport === 'stock' ? (loading && stockReport.length === 0) : (loading && movementReport.length === 0)}>
           <Download className="h-4 w-4 mr-2" />
           Export Report
         </Button>
@@ -190,7 +190,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(loading && stockReport.length === 0) ? (
               <div className="space-y-3">
                 <div className="flex gap-4 border-b pb-2">
                   <Skeleton className="h-4 w-24" />
@@ -225,7 +225,7 @@ const Reports = () => {
                   </thead>
                   <tbody>
                     {stockReport.map((item) => (
-                      <tr key={item.id} className="border-b hover:bg-muted/50">
+                      <tr key={item.id} className="border-b hover:bg-muted/50 odd:bg-muted/30">
                         <td className="p-2 font-medium">{item.name}</td>
                         <td className="p-2 capitalize">{item.category}</td>
                         <td className="p-2">{item.current_quantity}</td>
@@ -236,7 +236,7 @@ const Reports = () => {
                   </tbody>
                 </table>
               </div>
-            )}
+            }
           </CardContent>
         </Card>
       )}
@@ -250,7 +250,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(loading && movementReport.length === 0) ? (
               <div className="space-y-3">
                 <div className="flex gap-4 border-b pb-2">
                   <Skeleton className="h-4 w-20" />
@@ -273,6 +273,11 @@ const Reports = () => {
               <div className="text-center py-8 text-muted-foreground">No movement data found</div>
             ) : (
               <div className="overflow-x-auto">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <Badge variant="outline">Total In: {movementReport.filter(m => m.movement_type === 'in').reduce((a, b) => a + b.quantity, 0)}</Badge>
+                  <Badge variant="outline">Total Out: {movementReport.filter(m => m.movement_type === 'out').reduce((a, b) => a + b.quantity, 0)}</Badge>
+                  <Badge variant="secondary">Net: {movementReport.filter(m => m.movement_type === 'in').reduce((a, b) => a + b.quantity, 0) - movementReport.filter(m => m.movement_type === 'out').reduce((a, b) => a + b.quantity, 0)}</Badge>
+                </div>
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
@@ -285,7 +290,7 @@ const Reports = () => {
                   </thead>
                   <tbody>
                     {movementReport.map((movement) => (
-                      <tr key={movement.id} className="border-b hover:bg-muted/50">
+                      <tr key={movement.id} className="border-b hover:bg-muted/50 odd:bg-muted/30">
                         <td className="p-2">
                           {new Date(movement.created_at).toLocaleDateString()}
                         </td>

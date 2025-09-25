@@ -63,8 +63,9 @@ const Analytics = () => {
       });
 
       const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+      const formatCategory = (raw: string) => raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       const categoryData = Object.entries(categoryCount).map(([name, value], index) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
+        name: formatCategory(name),
         value,
         color: colors[index % colors.length]
       }));
@@ -80,21 +81,20 @@ const Analytics = () => {
           movement_type,
           quantity,
           created_at,
-          items (name, branch_id)
+          items!inner (name, branch_id)
         `)
+        .eq('items.branch_id', branchId)
         .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
       if (movementsError) throw movementsError;
 
-      // Filter movements for current branch
-      const branchMovements = (movementsData || []).filter(movement => 
-        movement.items?.[0]?.branch_id === branchId
-      );
+      // Movements for current branch (already filtered via join)
+      const branchMovements = (movementsData || []);
 
       const totalMovements = branchMovements.length;
 
-      // Movement trends by day
+      // Movement trends by day (last 7 days, zero-filled)
       const movementsByDate: { [key: string]: { in: number; out: number } } = {};
       branchMovements.forEach(movement => {
         const date = new Date(movement.created_at).toLocaleDateString();
@@ -104,9 +104,13 @@ const Analytics = () => {
         movementsByDate[date][movement.movement_type as 'in' | 'out'] += movement.quantity;
       });
 
-      const movementTrends = Object.entries(movementsByDate)
-        .slice(-7)
-        .map(([date, data]) => ({ date, ...data }));
+      const movementTrends = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const key = d.toLocaleDateString();
+        const val = movementsByDate[key] || { in: 0, out: 0 };
+        return { date: key, ...val };
+      });
 
       // Top performing items
       const itemMovementCount: { [key: string]: number } = {};
