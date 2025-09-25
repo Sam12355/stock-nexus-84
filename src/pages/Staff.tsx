@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ReactSelect from "react-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -63,6 +63,32 @@ const Staff = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+
+  const roleOptions = [
+    { value: 'regional_manager', label: 'Regional Manager' },
+    { value: 'district_manager', label: 'District Manager' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'assistant_manager', label: 'Assistant Manager' },
+    { value: 'staff', label: 'Staff' },
+  ];
+
+  const branchOptions = branches.map(b => ({ value: b.id, label: b.name }));
+
+  const selectStyles: any = {
+    menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+    menu: (base: any) => ({ ...base, zIndex: 9999, backgroundColor: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }),
+    control: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: 'hsl(var(--background))',
+      borderColor: state.isFocused ? 'hsl(var(--ring))' : 'hsl(var(--input))',
+      boxShadow: state.isFocused ? '0 0 0 1px hsl(var(--ring))' : 'none'
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isFocused ? 'hsl(var(--accent))' : 'hsl(var(--popover))',
+      color: 'hsl(var(--popover-foreground))'
+    })
+  };
 
   const fetchStaffMembers = async () => {
     setLoading(true);
@@ -406,18 +432,16 @@ const Staff = () => {
 
               <div>
                 <Label htmlFor="role">Role *</Label>
-                <Select onValueChange={(value: any) => setFormData({ ...formData, role: value })} defaultValue={formData.role}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="district_manager">District Manager</SelectItem>
-                    <SelectItem value="regional_manager">Regional Manager</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ReactSelect
+                  inputId="role"
+                  classNamePrefix="rs"
+                  options={roleOptions}
+                  value={roleOptions.find(o => o.value === formData.role)}
+                  onChange={(opt) => setFormData({ ...formData, role: (opt as any)?.value })}
+                  styles={selectStyles}
+                  menuPortalTarget={document.body}
+                  placeholder="Select role"
+                />
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
               </div>
 
@@ -425,18 +449,16 @@ const Staff = () => {
               {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
                 <div>
                   <Label htmlFor="branch">Branch *</Label>
-                  <Select onValueChange={(value) => setSelectedBranchId(value)} defaultValue={selectedBranchId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ReactSelect
+                    inputId="branch"
+                    classNamePrefix="rs"
+                    options={branchOptions}
+                    value={branchOptions.find(o => o.value === selectedBranchId) || null}
+                    onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
+                    styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    placeholder="Select branch"
+                  />
                 </div>
               )}
 
@@ -666,21 +688,16 @@ const Staff = () => {
 
             <div>
               <Label htmlFor="edit-role">Role *</Label>
-              <Select 
-                value={formData.role} 
-                onValueChange={(value: any) => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="district_manager">District Manager</SelectItem>
-                  <SelectItem value="regional_manager">Regional Manager</SelectItem>
-                </SelectContent>
-              </Select>
+              <ReactSelect
+                inputId="edit-role"
+                classNamePrefix="rs"
+                options={roleOptions}
+                value={roleOptions.find(o => o.value === formData.role)}
+                onChange={(opt) => setFormData({ ...formData, role: (opt as any)?.value })}
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                placeholder="Select role"
+              />
               {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
             </div>
 
@@ -688,18 +705,16 @@ const Staff = () => {
             {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
               <div>
                 <Label htmlFor="edit-branch">Branch *</Label>
-                <Select onValueChange={(value) => setSelectedBranchId(value)} defaultValue={selectedStaff?.branch_id || ""}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select branch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ReactSelect
+                  inputId="edit-branch"
+                  classNamePrefix="rs"
+                  options={branchOptions}
+                  value={branchOptions.find(o => o.value === (selectedBranchId || selectedStaff?.branch_id || "")) || null}
+                  onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
+                  styles={selectStyles}
+                  menuPortalTarget={document.body}
+                  placeholder="Select branch"
+                />
               </div>
             )}
 
