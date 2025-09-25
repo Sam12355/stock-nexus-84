@@ -230,16 +230,16 @@ const Stock = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Stock Management</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Stock Management</h1>
         <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Stock Movement
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Record Stock Movement</DialogTitle>
             </DialogHeader>
@@ -328,7 +328,7 @@ const Stock = () => {
       </div>
       
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFilterType('all')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -379,43 +379,45 @@ const Stock = () => {
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 min-w-0 flex-1">
                     {item.items.image_url ? (
                       <img 
                         src={item.items.image_url} 
                         alt={item.items.name}
-                        className="w-12 h-12 rounded object-cover"
+                        className="w-12 h-12 rounded object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
                         <Package className="h-6 w-6 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.items.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{item.items.name}</h3>
                       <p className="text-sm text-muted-foreground capitalize">
                         {item.items.category}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="font-medium">Qty: {item.current_quantity}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Threshold: {item.items.threshold_level}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center justify-between sm:justify-start gap-4">
+                      <div className="text-right">
+                        <p className="font-medium">Qty: {item.current_quantity}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Threshold: {item.items.threshold_level}
+                        </p>
+                      </div>
+                      
+                      <Badge variant={status.color as any}>
+                        {status.status}
+                      </Badge>
                     </div>
                     
-                    <Badge variant={status.color as any}>
-                      {status.status}
-                    </Badge>
-                    
-                    <div className="flex space-x-2">
+                    <div className="flex justify-end">
                       {quickActionItem?.id === item.id ? (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Input
                             type="number"
                             placeholder="Qty"
@@ -462,16 +464,6 @@ const Stock = () => {
                             }}
                           >
                             <Plus className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setQuickActionItem(item);
-                              setQuantity('');
-                            }}
-                          >
-                            <Minus className="h-4 w-4" />
                           </Button>
                         </>
                       )}

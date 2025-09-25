@@ -110,11 +110,27 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
   }
+  
+  h1 {
+    @apply text-2xl md:text-3xl;
+  }
+  
+  h2 {
+    @apply text-xl md:text-2xl;
+  }
+  
+  h3 {
+    @apply text-lg md:text-xl;
+  }
+  
+  .text-responsive {
+    @apply text-sm md:text-base;
+  }
 }
 
 @layer components {
   .sidebar-nav-item {
-    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors;
+    @apply flex items-center gap-3 px-3 md:px-4 py-3 text-sm font-medium rounded-lg transition-colors;
     @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
   }
   
@@ -123,7 +139,7 @@
   }
   
   .dashboard-card {
-    @apply bg-card border border-border rounded-lg p-6 shadow-sm;
+    @apply bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm;
   }
   
   .stock-card {

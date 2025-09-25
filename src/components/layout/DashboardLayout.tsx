@@ -50,16 +50,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="h-16 border-b border-border bg-dashboard-header flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="lg:hidden" />
-              <h2 className="font-semibold text-lg text-foreground hidden sm:block">
+          <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4 md:px-6">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+              <SidebarTrigger />
+              <h2 className="font-semibold text-sm md:text-lg text-foreground truncate">
                 Welcome back, {(profile?.name || (user?.user_metadata as any)?.name || user?.email?.split('@')[0] || 'User')}!
               </h2>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="relative hidden md:block">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="relative hidden lg:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search inventory..."
@@ -77,7 +77,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6 bg-background overflow-auto">
+          <main className="flex-1 p-4 md:p-6 bg-background overflow-auto">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
