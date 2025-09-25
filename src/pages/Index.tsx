@@ -237,6 +237,8 @@ const Index = () => {
     }
   }, [profile]);
 
+  console.log('Index component render - showEventModal:', showEventModal, 'profile role:', profile?.role);
+
   if (!profile) {
     return <div className="flex justify-center items-center h-64">Please log in to access the dashboard.</div>;
   }
@@ -330,7 +332,11 @@ const Index = () => {
               <CardDescription>Upcoming events and reminders</CardDescription>
             </div>
             {(profile?.role === 'admin' || profile?.role === 'manager') && (
-              <Button onClick={() => setShowEventModal(true)}>
+              <Button onClick={() => {
+                console.log('Add Event button clicked, current showEventModal:', showEventModal);
+                setShowEventModal(true);
+                console.log('setShowEventModal(true) called');
+              }}>
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Event
               </Button>
@@ -494,7 +500,10 @@ const Index = () => {
       </Dialog>
 
       {/* Add Event Modal */}
-      <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
+      <Dialog open={showEventModal} onOpenChange={(open) => {
+        console.log('Dialog onOpenChange called with:', open);
+        setShowEventModal(open);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Event</DialogTitle>
