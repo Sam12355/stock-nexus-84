@@ -134,12 +134,28 @@ const Staff = () => {
         });
         setIsEditModalOpen(false);
       } else {
-        // For creating new staff, we would need to handle user creation
-        // This is a simplified version - in a real app, you'd create the auth user first
+        // Create new staff member profile directly
+        const { error } = await supabase
+          .from('profiles')
+          .insert([{
+            name: formData.name.trim(),
+            email: formData.email.trim(),
+            phone: formData.phone.trim() || null,
+            position: formData.position.trim() || null,
+            role: formData.role,
+            photo_url: formData.photo_url.trim() || null,
+            branch_id: profile?.branch_id,
+            user_id: crypto.randomUUID(), // Generate a temporary UUID for demonstration
+            access_count: 0
+          }]);
+
+        if (error) throw error;
+
         toast({
-          title: "Info",
-          description: "Staff creation requires additional authentication setup",
+          title: "Success",
+          description: "Staff member created successfully",
         });
+        setIsAddModalOpen(false);
       }
 
       fetchStaffMembers();
@@ -314,14 +330,46 @@ const Staff = () => {
               </div>
 
               <div>
-                <Label htmlFor="photo_url">Photo URL</Label>
+                <Label htmlFor="photo_url">Staff Photo</Label>
                 <Input
                   id="photo_url"
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                  placeholder="https://example.com/photo.jpg"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Date.now()}.${fileExt}`;
+                        const filePath = `staff/${fileName}`;
+
+                        const { error: uploadError } = await supabase.storage
+                          .from('user-uploads')
+                          .upload(filePath, file);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data } = supabase.storage
+                          .from('user-uploads')
+                          .getPublicUrl(filePath);
+
+                        setFormData({ ...formData, photo_url: data.publicUrl });
+                      } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to upload photo",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }}
                 />
+                {formData.photo_url && (
+                  <div className="mt-2">
+                    <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                  </div>
+                )}
                 {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
               </div>
 
@@ -526,14 +574,46 @@ const Staff = () => {
             </div>
 
             <div>
-              <Label htmlFor="edit-photo_url">Photo URL</Label>
+              <Label htmlFor="edit-photo_url">Staff Photo</Label>
               <Input
                 id="edit-photo_url"
-                type="url"
-                value={formData.photo_url}
-                onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                placeholder="https://example.com/photo.jpg"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${Date.now()}.${fileExt}`;
+                      const filePath = `staff/${fileName}`;
+
+                      const { error: uploadError } = await supabase.storage
+                        .from('user-uploads')
+                        .upload(filePath, file);
+
+                      if (uploadError) throw uploadError;
+
+                      const { data } = supabase.storage
+                        .from('user-uploads')
+                        .getPublicUrl(filePath);
+
+                      setFormData({ ...formData, photo_url: data.publicUrl });
+                    } catch (error) {
+                      console.error('Error uploading photo:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to upload photo",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }}
               />
+              {formData.photo_url && (
+                <div className="mt-2">
+                  <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                </div>
+              )}
               {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
             </div>
 

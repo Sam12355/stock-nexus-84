@@ -51,18 +51,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .single();
 
+      // Update access tracking
+      if (data) {
+        await supabase
+          .from('profiles')
+          .update({ 
+            last_access: new Date().toISOString(),
+            access_count: (data.access_count || 0) + 1 
+          })
+          .eq('user_id', user.id);
+      }
+
       console.log('Profile query result:', { data, error });
       if (error) throw error;
       setProfile(data);
-      
-      // Update last access
-      await supabase
-        .from('profiles')
-        .update({
-          last_access: new Date().toISOString(),
-          access_count: (data.access_count || 0) + 1
-        })
-        .eq('user_id', user.id);
         
     } catch (error: any) {
       console.error('Error fetching profile:', error);

@@ -137,7 +137,7 @@ const Items = () => {
         image_url: formData.image_url.trim() || null,
         storage_temperature: formData.storage_temperature ? parseFloat(formData.storage_temperature) : null,
         threshold_level: parseInt(formData.threshold_level),
-        branch_id: profile?.branch_id || 'default',
+        branch_id: profile?.role === 'admin' ? null : profile?.branch_id,
         created_by: profile?.user_id
       };
 
@@ -321,14 +321,46 @@ const Items = () => {
               </div>
 
               <div>
-                <Label htmlFor="image-url">Item Photo URL</Label>
+                <Label htmlFor="image-url">Item Photo</Label>
                 <Input
                   id="image-url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Date.now()}.${fileExt}`;
+                        const filePath = `items/${fileName}`;
+
+                        const { error: uploadError } = await supabase.storage
+                          .from('user-uploads')
+                          .upload(filePath, file);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data } = supabase.storage
+                          .from('user-uploads')
+                          .getPublicUrl(filePath);
+
+                        setFormData({ ...formData, image_url: data.publicUrl });
+                      } catch (error) {
+                        console.error('Error uploading image:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to upload image",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }}
                 />
+                {formData.image_url && (
+                  <div className="mt-2">
+                    <img src={formData.image_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                  </div>
+                )}
                 {formErrors.image_url && <p className="text-sm text-red-500 mt-1">{formErrors.image_url}</p>}
               </div>
 
@@ -562,14 +594,46 @@ const Items = () => {
             </div>
 
             <div>
-              <Label htmlFor="edit-image-url">Item Photo URL</Label>
+              <Label htmlFor="edit-image-url">Item Photo</Label>
               <Input
                 id="edit-image-url"
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${Date.now()}.${fileExt}`;
+                      const filePath = `items/${fileName}`;
+
+                      const { error: uploadError } = await supabase.storage
+                        .from('user-uploads')
+                        .upload(filePath, file);
+
+                      if (uploadError) throw uploadError;
+
+                      const { data } = supabase.storage
+                        .from('user-uploads')
+                        .getPublicUrl(filePath);
+
+                      setFormData({ ...formData, image_url: data.publicUrl });
+                    } catch (error) {
+                      console.error('Error uploading image:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to upload image",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }}
               />
+              {formData.image_url && (
+                <div className="mt-2">
+                  <img src={formData.image_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                </div>
+              )}
               {formErrors.image_url && <p className="text-sm text-red-500 mt-1">{formErrors.image_url}</p>}
             </div>
 
