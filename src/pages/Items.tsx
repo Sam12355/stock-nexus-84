@@ -51,7 +51,7 @@ const itemSchema = z.object({
     required_error: "Category is required"
   }),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
-  image_url: z.string().url("Invalid image URL").optional().or(z.literal("")),
+  image_url: z.string().url("Please upload an item photo"),
   storage_temperature: z.number().min(-50, "Temperature must be above -50°C").max(100, "Temperature must be below 100°C").optional(),
   threshold_level: z.number().min(1, "Threshold must be at least 1").max(10000, "Threshold must be less than 10,000")
 });
@@ -188,9 +188,10 @@ const Items = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving item:', error);
+      const errMsg = (error as any)?.message || "Failed to save item";
       toast({
         title: "Error",
-        description: "Failed to save item",
+        description: errMsg,
         variant: "destructive",
       });
     }
@@ -359,7 +360,7 @@ const Items = () => {
               </div>
 
               <div>
-                <Label htmlFor="image-url">Item Photo</Label>
+                <Label htmlFor="image-url">Item Photo *</Label>
                 <Input
                   id="image-url"
                   type="file"
@@ -632,7 +633,7 @@ const Items = () => {
             </div>
 
             <div>
-              <Label htmlFor="edit-image-url">Item Photo</Label>
+              <Label htmlFor="edit-image-url">Item Photo *</Label>
               <Input
                 id="edit-image-url"
                 type="file"
