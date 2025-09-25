@@ -70,13 +70,13 @@ const ActivityLogs = () => {
         .filter(m => itemMap.has(m.item_id))
         .map(movement => ({
           id: `movement-${movement.id}`,
-          action: movement.movement_type === 'in' ? 'Stock In' : 'Stock Out',
+          action: movement.movement_type === 'in' ? 'Stock received' : 'Stock dispensed',
           user_name: (movement.updated_by && profileMap.get(movement.updated_by)) || 'Unknown User',
           item_name: itemMap.get(movement.item_id) || 'Unknown Item',
           quantity: movement.quantity,
           timestamp: movement.created_at,
           type: movement.movement_type === 'in' ? 'stock_in' : 'stock_out',
-          details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units`
+          details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units of ${itemMap.get(movement.item_id) || 'Unknown Item'}`
         }));
 
       // Fetch general activity logs for this branch
@@ -85,9 +85,8 @@ const ActivityLogs = () => {
         .select('id, action, created_at, details, user_id')
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false })
-        .limit(25);
+        .limit(50);
       if (activityError) {
-        // If blocked by RLS, still show movement activities
         console.warn('activity_logs not accessible:', activityError);
       }
 
@@ -107,22 +106,96 @@ const ActivityLogs = () => {
         }
       }
 
-      const generalActivities: ActivityLog[] = (activityData || []).map(log => ({
-        id: `log-${log.id}`,
-        action: log.action,
-        user_name: (log.user_id && activityUserMap.get(log.user_id)) || 'System',
-        timestamp: log.created_at,
-        type: 'system',
-        details: typeof log.details === 'object' ? JSON.stringify(log.details) : (log.details || log.action)
-      }));
+      // Get all items for name resolution in general activities
+      const { data: allItems } = await supabase
+        .from('items')
+        .select('id, name')
+        .eq('branch_id', branchId);
+      const allItemsMap = new Map<string, string>((allItems || []).map(i => [i.id, i.name]));
 
-      const combined = [
-        ...(filterType === 'all' || filterType === 'stock' ? movementActivities : []),
-        ...(filterType === 'all' || filterType === 'general' ? generalActivities : []),
-      ];
+      const generalActivities: ActivityLog[] = (activityData || []).map(log => {
+        const userName = (log.user_id && activityUserMap.get(log.user_id)) || 'System';
+        let friendlyAction = log.action;
+        let friendlyDetails = '';
+        let activityType = 'system';
 
-      combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      setActivities(combined.slice(0, 50));
+        // Parse details if it's JSON
+        let parsedDetails: any = {};
+        try {
+          parsedDetails = typeof log.details === 'string' ? JSON.parse(log.details) : log.details || {};
+        } catch {
+          parsedDetails = {};
+        }
+
+        // Make activities user-friendly
+        switch (log.action) {
+          case 'login':
+            friendlyAction = 'User logged in';
+            friendlyDetails = `${userName} signed into the system`;
+            activityType = 'login';
+            break;
+          case 'logout':
+            friendlyAction = 'User logged out';
+            friendlyDetails = `${userName} signed out of the system`;
+            activityType = 'logout';
+            break;
+          case 'item_created':
+            friendlyAction = 'Item added';
+            friendlyDetails = `${userName} added a new item: ${parsedDetails.name || 'Unknown Item'}`;
+            activityType = 'item_created';
+            break;
+          case 'item_updated':
+            const itemName = allItemsMap.get(parsedDetails.item_id) || parsedDetails.name || 'Unknown Item';
+            friendlyAction = 'Item updated';
+            friendlyDetails = `${userName} updated item: ${itemName}`;
+            activityType = 'item_updated';
+            break;
+          case 'item_deleted':
+            const deletedItemName = allItemsMap.get(parsedDetails.item_id) || 'Unknown Item';
+            friendlyAction = 'Item removed';
+            friendlyDetails = `${userName} removed item: ${deletedItemName}`;
+            activityType = 'item_deleted';
+            break;
+          case 'staff_created':
+            friendlyAction = 'Staff member added';
+            friendlyDetails = `${userName} added new staff member: ${parsedDetails.name || 'Unknown'}`;
+            activityType = 'staff_created';
+            break;
+          case 'staff_updated':
+            friendlyAction = 'Staff member updated';
+            friendlyDetails = `${userName} updated staff member with role: ${parsedDetails.role || 'Unknown'}`;
+            activityType = 'staff_updated';
+            break;
+          case 'staff_deleted':
+            friendlyAction = 'Staff member removed';
+            friendlyDetails = `${userName} removed a staff member`;
+            activityType = 'staff_deleted';
+            break;
+          case 'profile_updated':
+            friendlyAction = 'Profile updated';
+            friendlyDetails = `${userName} updated their profile`;
+            activityType = 'profile_updated';
+            break;
+          default:
+            friendlyAction = log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            friendlyDetails = typeof log.details === 'object' ? JSON.stringify(log.details) : (log.details || log.action);
+        }
+
+        return {
+          id: `log-${log.id}`,
+          action: friendlyAction,
+          user_name: userName,
+          timestamp: log.created_at,
+          type: activityType,
+          details: friendlyDetails
+        };
+      });
+
+      // Store all activities and let filtering happen on frontend
+      const allActivities = [...movementActivities, ...generalActivities];
+      allActivities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      setActivities(allActivities.slice(0, 100));
 
     } catch (error) {
       console.error('Error fetching activity logs:', error);
@@ -130,7 +203,15 @@ const ActivityLogs = () => {
       setLoadingFeed(false);
       setInitialLoaded(true);
     }
-  }, [profile, filterType]);
+  }, [profile]); // Remove filterType dependency for better performance
+
+  // Filter activities on frontend for better performance
+  const filteredActivities = activities.filter(activity => {
+    if (filterType === 'all') return true;
+    if (filterType === 'stock') return activity.type === 'stock_in' || activity.type === 'stock_out';
+    if (filterType === 'general') return activity.type !== 'stock_in' && activity.type !== 'stock_out';
+    return true;
+  });
 
   useEffect(() => {
     if (profile) {
@@ -146,10 +227,22 @@ const ActivityLogs = () => {
         return <Package className="h-4 w-4 text-orange-600" />;
       case "item_created":
         return <CheckCircle className="h-4 w-4 text-blue-600" />;
-      case "alert":
+      case "item_updated":
+        return <Activity className="h-4 w-4 text-blue-600" />;
+      case "item_deleted":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
-      case "system":
-        return <Activity className="h-4 w-4 text-purple-600" />;
+      case "staff_created":
+        return <User className="h-4 w-4 text-green-600" />;
+      case "staff_updated":
+        return <User className="h-4 w-4 text-blue-600" />;
+      case "staff_deleted":
+        return <User className="h-4 w-4 text-red-600" />;
+      case "profile_updated":
+        return <User className="h-4 w-4 text-purple-600" />;
+      case "login":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "logout":
+        return <AlertCircle className="h-4 w-4 text-gray-600" />;
       default:
         return <CalendarDays className="h-4 w-4 text-gray-600" />;
     }
@@ -158,15 +251,19 @@ const ActivityLogs = () => {
   const getBadgeVariant = (type: string) => {
     switch (type) {
       case "stock_in":
+      case "item_created":
+      case "staff_created":
+      case "login":
         return "default";
       case "stock_out":
+      case "item_updated":
+      case "staff_updated":
+      case "profile_updated":
         return "secondary";
-      case "item_created":
-        return "outline";
-      case "alert":
+      case "item_deleted":
+      case "staff_deleted":
+      case "logout":
         return "destructive";
-      case "system":
-        return "secondary";
       default:
         return "outline";
     }
@@ -219,13 +316,13 @@ const ActivityLogs = () => {
                   </div>
                 ))}
               </div>
-            ) : activities.length === 0 ? (
+            ) : filteredActivities.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No activities found
               </div>
             ) : (
               <div className="space-y-4">
-                {activities.map((activity) => (
+                {filteredActivities.map((activity) => (
                   <div
                     key={activity.id}
                     className="flex items-start space-x-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
