@@ -43,6 +43,7 @@ const Settings = () => {
   const { profile } = useAuth() as { profile: ExtendedProfile | null };
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [testMessageLoading, setTestMessageLoading] = useState(false);
   const [branch, setBranch] = useState<Branch | null>(null);
 
   // Guards against state being reset after user edits
@@ -278,6 +279,53 @@ const Settings = () => {
     }
   };
 
+  // Send test hello message
+  const sendTestHelloMessage = async () => {
+    if (!profileData.phone || profileData.phone.trim() === "") {
+      toast({
+        title: "Error",
+        description: "Please add a phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestMessageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
+        body: {
+          phoneNumber: profileData.phone,
+          message: 'Hello! This is a test message from your inventory management system.',
+          type: 'general'
+        }
+      });
+
+      if (error) {
+        console.error('WhatsApp test error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to send test message",
+          variant: "destructive",
+        });
+      } else {
+        console.log('WhatsApp test sent:', data);
+        toast({
+          title: "Success",
+          description: "Test message sent! Check your WhatsApp.",
+        });
+      }
+    } catch (error) {
+      console.error('Error sending test WhatsApp:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send test message",
+        variant: "destructive",
+      });
+    } finally {
+      setTestMessageLoading(false);
+    }
+  };
+
   if (!profile) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
@@ -430,6 +478,19 @@ const Settings = () => {
                 />
               </div>
             </div>
+
+            {profileData.phone && (
+              <div className="pt-4 border-t">
+                <Button 
+                  onClick={sendTestHelloMessage} 
+                  disabled={testMessageLoading}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {testMessageLoading ? "Sending..." : "Send Test WhatsApp Message"}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
