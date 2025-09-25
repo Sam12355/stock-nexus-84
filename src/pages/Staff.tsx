@@ -137,8 +137,8 @@ const Staff = () => {
         setIsEditModalOpen(false);
       } else {
         // Create new staff member profile directly
-        // Ensure branch selection for admins
-        if (profile?.role === 'regional_manager' && !selectedBranchId) {
+        // Regional managers with branch_context don't need to select branch
+        if ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && !selectedBranchId) {
           toast({
             title: "Branch required",
             description: "Please select a branch for this staff member.",
@@ -156,7 +156,9 @@ const Staff = () => {
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
-            branch_id: profile?.role === 'regional_manager' ? selectedBranchId : profile?.branch_id,
+            branch_id: (profile?.role === 'regional_manager' || profile?.role === 'district_manager') 
+              ? (profile?.branch_context || selectedBranchId) 
+              : profile?.branch_id,
             access_count: 0
           }]);
 
@@ -341,14 +343,15 @@ const Staff = () => {
                   <SelectContent>
                     <SelectItem value="staff">Staff</SelectItem>
                     <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                    {profile?.role === 'regional_manager' && (
+                    {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
                       <SelectItem value="manager">Manager</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
 
-                {profile?.role === 'regional_manager' && (
+                {/* Only show branch selection for regional managers without branch_context */}
+                {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && (
                   <div className="mt-2">
                     <Label htmlFor="branch">Branch *</Label>
                     <Select onValueChange={(value) => setSelectedBranchId(value)}>
@@ -603,7 +606,7 @@ const Staff = () => {
                 <SelectContent>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                  {profile?.role === 'regional_manager' && (
+                  {(profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
                     <SelectItem value="manager">Manager</SelectItem>
                   )}
                 </SelectContent>
