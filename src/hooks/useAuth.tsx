@@ -203,6 +203,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       
+      // Log profile update as a general activity (defer to avoid auth callback deadlocks)
+      setTimeout(async () => {
+        try {
+          await supabase.rpc('log_user_activity', {
+            p_action: 'profile_updated',
+            p_details: JSON.stringify({ fields: Object.keys(updates || {}) }),
+            p_branch_id: profile?.branch_id || profile?.branch_context || null as any
+          });
+        } catch (logError) {
+          console.warn('Failed to log profile update:', logError);
+        }
+      }, 0);
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated",

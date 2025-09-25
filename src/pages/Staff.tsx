@@ -130,6 +130,18 @@ const Staff = () => {
 
         if (error) throw error;
 
+        // Log activity
+        try {
+          const branchId = profile?.branch_id || profile?.branch_context || '';
+          await supabase.rpc('log_user_activity', {
+            p_action: 'staff_updated',
+            p_details: JSON.stringify({ staff_id: selectedStaff.id, role: formData.role }),
+            p_branch_id: branchId
+          });
+        } catch (logError) {
+          console.warn('Failed to log staff update:', logError);
+        }
+
         toast({
           title: "Success",
           description: "Staff member updated successfully",
@@ -164,6 +176,20 @@ const Staff = () => {
 
         if (error) throw error;
 
+        // Log activity
+        try {
+          const branchId = (profile?.role === 'regional_manager' || profile?.role === 'district_manager') 
+            ? (profile?.branch_context || selectedBranchId) 
+            : profile?.branch_id;
+          await supabase.rpc('log_user_activity', {
+            p_action: 'staff_created',
+            p_details: JSON.stringify({ name: formData.name, role: formData.role }),
+            p_branch_id: branchId || ''
+          });
+        } catch (logError) {
+          console.warn('Failed to log staff creation:', logError);
+        }
+
         toast({
           title: "Success",
           description: "Staff member created successfully",
@@ -191,6 +217,18 @@ const Staff = () => {
         .eq('id', staffId);
 
       if (error) throw error;
+
+      // Log activity
+      try {
+        const branchId = profile?.branch_id || profile?.branch_context || '';
+        await supabase.rpc('log_user_activity', {
+          p_action: 'staff_deleted',
+          p_details: JSON.stringify({ staff_id: staffId }),
+          p_branch_id: branchId
+        });
+      } catch (logError) {
+        console.warn('Failed to log staff deletion:', logError);
+      }
 
       toast({
         title: "Success",
