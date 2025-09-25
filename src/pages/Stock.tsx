@@ -33,6 +33,7 @@ const Stock = () => {
   const [movementType, setMovementType] = useState<'in' | 'out'>('in');
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
 
   const fetchStockData = async () => {
@@ -90,6 +91,7 @@ const Stock = () => {
       setReason('');
       setMovementType('in');
       setIsMovementDialogOpen(false);
+      setSearchTerm('');
     } catch (error) {
       console.error('Error updating stock:', error);
       const errMsg = (error as any)?.message || "Failed to update stock";
@@ -121,6 +123,12 @@ const Stock = () => {
   const lowStockItems = stockItems.filter(item => 
     item.current_quantity <= item.items.threshold_level
   );
+  // Filter items based on search term
+  const filteredStockItems = stockItems.filter(item =>
+    item.items.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.items.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const criticalStockItems = stockItems.filter(item => 
     item.current_quantity <= item.items.threshold_level * 0.5
   );
@@ -143,21 +151,34 @@ const Stock = () => {
             <div className="space-y-4">
               <div>
                 <Label>Select Item</Label>
-                <Select onValueChange={(value) => {
-                  const item = stockItems.find(s => s.id === value);
-                  setSelectedItem(item || null);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an item" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    {stockItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.items.name} (Current: {item.current_quantity})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                  <Select onValueChange={(value) => {
+                    const item = stockItems.find(s => s.id === value);
+                    setSelectedItem(item || null);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an item" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {filteredStockItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.items.name} (Current: {item.current_quantity})
+                        </SelectItem>
+                      ))}
+                      {filteredStockItems.length === 0 && (
+                        <div className="px-2 py-1 text-sm text-muted-foreground">
+                          No items found
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               {selectedItem && (
