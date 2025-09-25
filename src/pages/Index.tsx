@@ -26,6 +26,26 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
+// Extended types for new roles and branch_context
+type ExtendedUserRole = 'regional_manager' | 'district_manager' | 'admin' | 'manager' | 'assistant_manager' | 'staff';
+
+interface ExtendedProfile {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  photo_url: string | null;
+  position: string | null;
+  role: ExtendedUserRole;
+  branch_id: string | null;
+  branch_context?: string | null;
+  last_access: string | null;
+  access_count: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface DashboardStats {
   totalItems: number;
   lowStockItems: number;
@@ -60,6 +80,9 @@ interface WeatherData {
 const Index = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  
+  // Cast profile to extended type
+  const extendedProfile = profile as ExtendedProfile | null;
   const [stats, setStats] = useState<DashboardStats>({
     totalItems: 0,
     lowStockItems: 0,
@@ -86,11 +109,18 @@ const Index = () => {
   const hasFetchedWeatherRef = useRef(false);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [showBranchSelection, setShowBranchSelection] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch branches for admin users
-      if (profile?.role === 'admin') {
+      // Check if Regional/District Manager needs to select branch context first
+      if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context) {
+        setShowBranchSelection(true);
+        return;
+      }
+
+      // Fetch branches for regional/district managers
+      if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
           .select('id, name')
@@ -116,10 +146,14 @@ const Index = () => {
 
       if (stockError) throw stockError;
 
-      // Filter by branch if not admin
+      // Filter by branch context for regional/district managers, by branch_id for others
       let filteredStock = stockData || [];
-      if (profile?.role !== 'admin' && profile?.branch_id) {
-        filteredStock = stockData?.filter(item => item.items.branch_id === profile.branch_id) || [];
+      const userBranchContext = extendedProfile?.branch_context || extendedProfile?.branch_id;
+      
+      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+        filteredStock = stockData?.filter(item => item.items.branch_id === userBranchContext) || [];
+      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+        filteredStock = stockData?.filter(item => item.items.branch_id === extendedProfile.branch_context) || [];
       }
 
       // Calculate stock statistics - critical items are NOT included in low stock
@@ -134,8 +168,10 @@ const Index = () => {
 
       // Fetch staff count
       let staffQuery = supabase.from('profiles').select('*', { count: 'exact' });
-      if (profile?.role !== 'admin' && profile?.branch_id) {
-        staffQuery = staffQuery.eq('branch_id', profile.branch_id);
+      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+        staffQuery = staffQuery.eq('branch_id', userBranchContext);
+      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+        staffQuery = staffQuery.eq('branch_id', extendedProfile.branch_context);
       }
       
       const { count: staffCount, error: staffError } = await staffQuery;
@@ -153,8 +189,10 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (profile?.role !== 'admin' && profile?.branch_id) {
-        activityQuery = activityQuery.eq('branch_id', profile.branch_id);
+      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+        activityQuery = activityQuery.eq('branch_id', userBranchContext);
+      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+        activityQuery = activityQuery.eq('branch_id', extendedProfile.branch_context);
       }
 
       const { data: activities, error: activityError } = await activityQuery;
@@ -168,8 +206,10 @@ const Index = () => {
         .order('event_date', { ascending: true })
         .limit(5);
 
-      if (profile?.role !== 'admin' && profile?.branch_id) {
-        eventsQuery = eventsQuery.eq('branch_id', profile.branch_id);
+      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+        eventsQuery = eventsQuery.eq('branch_id', userBranchContext);
+      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+        eventsQuery = eventsQuery.eq('branch_id', extendedProfile.branch_context);
       }
 
       const { data: eventsData, error: eventsError } = await eventsQuery;
@@ -232,8 +272,8 @@ const Index = () => {
 
     // Determine branch ID based on user role
     let branchId: string | null = null;
-    if (profile?.role === 'admin') {
-      if (!selectedBranchId) {
+    if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
+      if (!selectedBranchId && !extendedProfile?.branch_context) {
         toast({
           title: "Branch is required",
           description: "Please select a branch for this event.",
@@ -241,10 +281,10 @@ const Index = () => {
         });
         return;
       }
-      branchId = selectedBranchId;
+      branchId = selectedBranchId || extendedProfile?.branch_context || null;
     } else {
       // For managers, use their assigned branch
-      if (!profile?.branch_id) {
+      if (!extendedProfile?.branch_id) {
         toast({
           title: "Profile missing branch",
           description: "Your profile needs to be assigned to a branch.",
@@ -252,7 +292,7 @@ const Index = () => {
         });
         return;
       }
-      branchId = profile.branch_id;
+      branchId = extendedProfile.branch_id;
     }
 
     try {
@@ -262,7 +302,7 @@ const Index = () => {
         event_date: format(newEvent.event_date, 'yyyy-MM-dd'),
         event_type: newEvent.event_type,
         branch_id: branchId,
-        created_by: profile.id
+        created_by: extendedProfile?.id
       } as const;
 
       const { error } = await supabase
@@ -287,6 +327,32 @@ const Index = () => {
       console.error('Error adding event:', error);
       toast({
         title: "Failed to add event",
+        description: error?.message || 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBranchSelection = async (branchId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ branch_context: branchId })
+        .eq('user_id', extendedProfile?.user_id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Branch selected", 
+        description: "Your branch context has been set. Loading dashboard..." 
+      });
+
+      // Refresh the profile data and dashboard
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error setting branch context:', error);
+      toast({
+        title: "Failed to set branch",
         description: error?.message || 'An unexpected error occurred',
         variant: "destructive",
       });
@@ -320,13 +386,18 @@ const Index = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {profile?.name || 'User'}! Here's what's happening with your inventory.
+            Welcome back, {extendedProfile?.name || 'User'}! Here's what's happening with your inventory.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Activity className="h-4 w-4" />
           Today: {new Date().toLocaleDateString()}
-          {(profile?.role === 'admin' || profile?.role === 'manager') && (
+          {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && (
+            <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
+              <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
+            </Button>
+          )}
+          {(extendedProfile?.role === 'manager' || extendedProfile?.role === 'assistant_manager') && (
             <Button size="sm" onClick={() => setShowEventModal(true)} className="ml-3">
               <CalendarIcon className="h-4 w-4 mr-1" /> Add Event
             </Button>
@@ -402,7 +473,7 @@ const Index = () => {
               <CardTitle>Calendar & Events</CardTitle>
               <CardDescription>Upcoming events and reminders</CardDescription>
             </div>
-            {(profile?.role === 'admin' || profile?.role === 'manager') && (
+            {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager' || extendedProfile?.role === 'manager' || extendedProfile?.role === 'assistant_manager') && (
               <Button onClick={() => {
                 console.log('Add Event button clicked, current showEventModal:', showEventModal);
                 setShowEventModal(true);
@@ -570,6 +641,35 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Branch Selection Modal for Regional/District Managers */}
+      <Dialog open={showBranchSelection} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Your Branch</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Please select which branch you'd like to manage. This will be your working context.
+            </p>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Available Branches</Label>
+              <div className="grid gap-2 mt-2">
+                {branches.map((branch) => (
+                  <Button
+                    key={branch.id}
+                    variant="outline"
+                    onClick={() => handleBranchSelection(branch.id)}
+                    className="justify-start"
+                  >
+                    {branch.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Event Modal */}
       <Dialog open={showEventModal} onOpenChange={(open) => {
         console.log('Dialog onOpenChange called with:', open);
@@ -580,7 +680,7 @@ const Index = () => {
             <DialogTitle>Add New Event</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {profile?.role === 'admin' && (
+            {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context && (
               <div>
                 <Label htmlFor="event-branch">Branch *</Label>
                 <Select onValueChange={setSelectedBranchId} value={selectedBranchId}>
