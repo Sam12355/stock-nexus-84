@@ -153,36 +153,38 @@ export function AppSidebar() {
               </div>
 
               <div className="px-4 space-y-1">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/settings"
-                      className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`}
-                      onClick={() => {
-                        if (isMobile) {
-                          setOpen(false);
-                        }
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                      {!isCollapsed && <span>Settings</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarMenu className="space-y-1 list-none">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/settings"
+                        className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`}
+                        onClick={() => {
+                          if (isMobile) {
+                            setOpen(false);
+                          }
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                        {!isCollapsed && <span>Settings</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={signOut}
-                      className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {!isCollapsed && <span className="ml-3">Sign Out</span>}
-                    </Button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={signOut}
+                        className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {!isCollapsed && <span className="ml-3">Sign Out</span>}
+                      </Button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
