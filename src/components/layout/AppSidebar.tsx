@@ -32,43 +32,43 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
   },
   {
     title: "Manage Staff",
     url: "/staff",
     icon: Users,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Manage Items",
     url: "/items",
     icon: Package2,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Manage Stock",
     url: "/stock",
     icon: Package,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
   },
   {
     title: "Reports",
     url: "/reports",
     icon: FileText,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager']
   },
   {
     title: "Activity Logs",
     url: "/activity",
     icon: ClipboardList,
-    roles: ['regional_manager', 'district_manager', 'manager']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager']
   }
 ];
 

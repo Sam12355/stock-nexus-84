@@ -115,17 +115,17 @@ const Reports = () => {
         if (itemsError) throw itemsError;
         const itemMap = new Map<string, string>((itemsData || []).map(i => [i.id, i.name]));
 
-        // Fetch user names from profiles
+        // Fetch user names from profiles using profile IDs 
         let profileMap = new Map<string, string>();
         if (userIds.length) {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
-            .select('user_id, name')
-            .in('user_id', userIds);
+            .select('id, name')
+            .in('id', userIds);
           if (profilesError) {
             console.warn('Could not fetch profiles:', profilesError);
           } else {
-            profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+            profileMap = new Map<string, string>((profilesData || []).map(p => [p.id, p.name]));
           }
         }
 
@@ -251,24 +251,24 @@ const Reports = () => {
               <div className="text-center py-8 text-muted-foreground">No stock data found</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Item Name</th>
-                      <th className="text-left p-2">Category</th>
-                      <th className="text-left p-2">Current Stock</th>
-                      <th className="text-left p-2">Threshold</th>
-                      <th className="text-left p-2">Status</th>
+                    <tr className="border-b-2 border-primary/20 bg-muted/30">
+                      <th className="text-left p-3 font-semibold">Item Name</th>
+                      <th className="text-left p-3 font-semibold">Category</th>
+                      <th className="text-left p-3 font-semibold">Current Stock</th>
+                      <th className="text-left p-3 font-semibold">Threshold</th>
+                      <th className="text-left p-3 font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stockReport.map((item) => (
-                      <tr key={item.id} className="border-b hover:bg-muted/50 odd:bg-muted/30">
-                        <td className="p-2 font-medium">{item.name}</td>
-                        <td className="p-2 capitalize">{item.category}</td>
-                        <td className="p-2">{item.current_quantity}</td>
-                        <td className="p-2">{item.threshold_level}</td>
-                        <td className="p-2">{getStatusBadge(item.status)}</td>
+                      <tr key={item.id} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3 font-medium text-foreground">{item.name}</td>
+                        <td className="p-3 capitalize text-muted-foreground">{item.category.replace(/_/g, ' ')}</td>
+                        <td className="p-3 font-semibold">{item.current_quantity}</td>
+                        <td className="p-3">{item.threshold_level}</td>
+                        <td className="p-3">{getStatusBadge(item.status)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -280,11 +280,11 @@ const Reports = () => {
       )}
 
       {selectedReport === 'movements' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Stock Movement History
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-secondary/10 to-secondary/5">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <TrendingUp className="h-5 w-5 text-secondary-foreground" />
+              Stock Movement History Report
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -316,30 +316,30 @@ const Reports = () => {
                   <Badge variant="outline">Total Out: {movementReport.filter(m => m.movement_type === 'out').reduce((a, b) => a + b.quantity, 0)}</Badge>
                   <Badge variant="secondary">Net: {movementReport.filter(m => m.movement_type === 'in').reduce((a, b) => a + b.quantity, 0) - movementReport.filter(m => m.movement_type === 'out').reduce((a, b) => a + b.quantity, 0)}</Badge>
                 </div>
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Item</th>
-                      <th className="text-left p-2">Type</th>
-                      <th className="text-left p-2">Quantity</th>
-                      <th className="text-left p-2">Updated By</th>
+                    <tr className="border-b-2 border-primary/20 bg-muted/30">
+                      <th className="text-left p-3 font-semibold">Date</th>
+                      <th className="text-left p-3 font-semibold">Item</th>
+                      <th className="text-left p-3 font-semibold">Type</th>
+                      <th className="text-left p-3 font-semibold">Quantity</th>
+                      <th className="text-left p-3 font-semibold">Updated By</th>
                     </tr>
                   </thead>
                   <tbody>
                     {movementReport.map((movement) => (
-                      <tr key={movement.id} className="border-b hover:bg-muted/50 odd:bg-muted/30">
-                        <td className="p-2">
+                      <tr key={movement.id} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3 text-muted-foreground">
                           {new Date(movement.created_at).toLocaleDateString()}
                         </td>
-                        <td className="p-2 font-medium">{movement.item_name}</td>
-                        <td className="p-2">
+                        <td className="p-3 font-medium text-foreground">{movement.item_name}</td>
+                        <td className="p-3">
                           <Badge variant={movement.movement_type === 'in' ? 'default' : 'secondary'}>
                             {movement.movement_type === 'in' ? 'Stock In' : 'Stock Out'}
                           </Badge>
                         </td>
-                        <td className="p-2">{movement.quantity}</td>
-                        <td className="p-2">{movement.updated_by_name}</td>
+                        <td className="p-3 font-semibold">{movement.quantity}</td>
+                        <td className="p-3 text-muted-foreground">{movement.updated_by_name}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -22,7 +22,7 @@ interface ExtendedProfile {
   phone?: string;
   photo_url?: string;
   position?: string;
-  role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
+  role: 'admin' | 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
   branch_id?: string;
   branch_context?: string;
   last_access?: string;

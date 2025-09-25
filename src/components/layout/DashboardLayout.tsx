@@ -8,6 +8,7 @@ import { SlideshowHeader } from '@/components/SlideshowHeader';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationsDropdown } from '@/components/NotificationsDropdown';
 import { SearchDropdown } from '@/components/SearchDropdown';
+import { PendingAccess } from '@/components/PendingAccess';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -43,6 +44,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (!user) {
     return null;
+  }
+
+  // Check if user has pending access (no branch assigned)
+  if (profile && !profile.branch_id && profile.role === 'staff') {
+    return <PendingAccess />;
   }
 
   return (
