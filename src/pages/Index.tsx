@@ -8,19 +8,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { 
   Package, 
   Users, 
   TrendingUp, 
   AlertTriangle, 
   Activity,
-  Calendar,
+  Calendar as CalendarIcon,
   Cloud,
   Thermometer,
   Droplets,
   Wind
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 
 interface DashboardStats {
   totalItems: number;
@@ -74,9 +77,10 @@ const Index = () => {
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    event_date: '',
+    event_date: new Date() as Date | undefined,
     event_type: 'reminder'
   });
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
 
   const fetchDashboardData = async () => {
     try {
@@ -196,13 +200,19 @@ const Index = () => {
     if (!newEvent.title || !newEvent.event_date) return;
 
     try {
+      // For admin users without branch_id, use a default branch or allow null
+      const eventData = {
+        title: newEvent.title,
+        description: newEvent.description,
+        event_date: format(newEvent.event_date, 'yyyy-MM-dd'),
+        event_type: newEvent.event_type,
+        branch_id: profile?.branch_id || null, // Allow null for admin users
+        created_by: profile?.id
+      };
+
       const { error } = await supabase
         .from('calendar_events')
-        .insert([{
-          ...newEvent,
-          branch_id: profile?.role === 'admin' ? profile?.branch_id : profile?.branch_id,
-          created_by: profile?.id
-        }]);
+        .insert([eventData]);
 
       if (error) throw error;
 
@@ -212,7 +222,7 @@ const Index = () => {
       setNewEvent({
         title: '',
         description: '',
-        event_date: '',
+        event_date: new Date(),
         event_type: 'reminder'
       });
     } catch (error) {
@@ -321,36 +331,52 @@ const Index = () => {
             </div>
             {(profile?.role === 'admin' || profile?.role === 'manager') && (
               <Button onClick={() => setShowEventModal(true)}>
-                <Calendar className="h-4 w-4 mr-2" />
+                <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Event
               </Button>
             )}
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {events.length > 0 ? (
-                events.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                      <div>
-                        <p className="font-medium">{event.title}</p>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Calendar */}
+              <div className="flex flex-col items-center">
+                <Calendar
+                  mode="single"
+                  selected={selectedCalendarDate}
+                  onSelect={setSelectedCalendarDate}
+                  className="rounded-md border pointer-events-auto"
+                />
+              </div>
+              
+              {/* Events List */}
+              <div className="space-y-4">
+                <h4 className="font-semibold">Upcoming Events</h4>
+                {events.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {events.map((event) => (
+                      <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <div>
+                            <p className="font-medium">{event.title}</p>
+                            <p className="text-sm text-muted-foreground">{event.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(event.event_date).toLocaleDateString()}
+                          </p>
+                          <Badge variant="outline">{event.event_type}</Badge>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {new Date(event.event_date).toLocaleDateString()}
-                      </p>
-                      <Badge variant="outline">{event.event_type}</Badge>
-                    </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No upcoming events
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No upcoming events
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -493,12 +519,11 @@ const Index = () => {
               />
             </div>
             <div>
-              <Label htmlFor="event-date">Date *</Label>
-              <Input
-                id="event-date"
-                type="date"
+              <Label htmlFor="event-date">Date & Time *</Label>
+              <DateTimePicker
                 value={newEvent.event_date}
-                onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+                onChange={(date) => setNewEvent({ ...newEvent, event_date: date })}
+                placeholder="Select date and time"
               />
             </div>
             <div>
