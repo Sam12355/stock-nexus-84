@@ -269,6 +269,7 @@ export type Database = {
           id: string
           last_access: string | null
           name: string
+          notification_settings: Json | null
           phone: string | null
           photo_url: string | null
           position: string | null
@@ -285,6 +286,7 @@ export type Database = {
           id?: string
           last_access?: string | null
           name: string
+          notification_settings?: Json | null
           phone?: string | null
           photo_url?: string | null
           position?: string | null
@@ -301,6 +303,7 @@ export type Database = {
           id?: string
           last_access?: string | null
           name?: string
+          notification_settings?: Json | null
           phone?: string | null
           photo_url?: string | null
           position?: string | null

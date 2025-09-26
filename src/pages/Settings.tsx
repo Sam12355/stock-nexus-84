@@ -84,30 +84,88 @@ const Settings = () => {
     };
   });
 
-  // Persist notifications to localStorage on change
+  // Save notifications to both localStorage and database
+  const saveNotificationsToDatabase = async (notificationSettings: any) => {
+    if (!profile?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          notification_settings: {
+            whatsapp: notificationSettings.whatsapp,
+            stockLevelAlerts: notificationSettings.stockAlerts,
+            eventReminders: notificationSettings.eventReminders
+          }
+        })
+        .eq('id', profile.id);
+        
+      if (error) {
+        console.error('Error saving notifications to database:', error);
+      }
+    } catch (error) {
+      console.error('Error saving notifications to database:', error);
+    }
+  };
+
+  // Persist notifications to localStorage AND database on change
   useEffect(() => {
     if (profile?.id) {
       try {
         localStorage.setItem(`notifications_${profile.id}`, JSON.stringify(notifications));
+        // Also save to database for edge functions to access
+        saveNotificationsToDatabase(notifications);
       } catch (e) {
-        console.error('Error saving notifications to localStorage:', e);
+        console.error('Error saving notifications:', e);
       }
     }
   }, [notifications, profile?.id]);
 
-  // Hydrate notifications from localStorage (preferred over DB)
+  // Hydrate notifications from localStorage and database
   useEffect(() => {
     if (!profile?.id) return;
-    const saved = localStorage.getItem(`notifications_${profile.id}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setNotifications(parsed);
-        hasTouchedNotificationsRef.current = true; // prevent DB overwrite
-      } catch (e) {
-        console.error('Error parsing saved notifications on hydrate:', e);
+    
+    const loadNotificationSettings = async () => {
+      // First try localStorage
+      const saved = localStorage.getItem(`notifications_${profile.id}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setNotifications(parsed);
+          hasTouchedNotificationsRef.current = true;
+          return;
+        } catch (e) {
+          console.error('Error parsing saved notifications on hydrate:', e);
+        }
       }
-    }
+      
+      // If no localStorage, try database
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('notification_settings')
+          .eq('id', profile.id)
+          .single();
+          
+        if (!error && data?.notification_settings) {
+          const dbSettings = data.notification_settings;
+          const mappedSettings = {
+            email: true, // default
+            sms: false, // default
+            whatsapp: dbSettings.whatsapp || false,
+            stockAlerts: dbSettings.stockLevelAlerts || false,
+            eventReminders: dbSettings.eventReminders || false,
+          };
+          setNotifications(mappedSettings);
+          // Also save to localStorage for faster access
+          localStorage.setItem(`notifications_${profile.id}`, JSON.stringify(mappedSettings));
+        }
+      } catch (error) {
+        console.error('Error loading notification settings from database:', error);
+      }
+    };
+    
+    loadNotificationSettings();
   }, [profile?.id]);
 
   // Branch settings
