@@ -433,9 +433,10 @@ const Index = () => {
   const handleDistrictSelection = async (selectedOption: {value: string, label: string} | null) => {
     if (!selectedOption) return;
     try {
+      let districtBranches: any[] = [];
       // Prefer client-side filter from already loaded region branches for snappy UX
       if (branches && branches.length > 0) {
-        const districtBranches = branches.filter(b => b.district_id === selectedOption.value);
+        districtBranches = branches.filter(b => b.district_id === selectedOption.value);
         setFilteredBranches(districtBranches);
       } else {
         // Fallback: fetch from backend if branches not loaded yet
@@ -445,9 +446,17 @@ const Index = () => {
           .eq('district_id', selectedOption.value)
           .order('name');
         if (branchesError) throw branchesError;
-        setFilteredBranches(branchesData || []);
-        setBranches(prev => prev && prev.length ? prev : (branchesData || []));
+        districtBranches = branchesData || [];
+        setFilteredBranches(districtBranches);
+        setBranches(prev => prev && prev.length ? prev : districtBranches);
       }
+
+      // Debug outputs for verification
+      console.log('District selected:', selectedOption);
+      console.log('Filtered branches for district:', districtBranches);
+      const names = districtBranches.map((b: any) => b.name).join(', ') || 'No branches found';
+      try { window.alert(`Branches for ${selectedOption.label}: ${names}`); } catch {}
+      toast({ title: 'Branches loaded', description: `${districtBranches.length} branches found for ${selectedOption.label}` });
 
       setSelectedDistrictOption(selectedOption);
       // Keep district selection visible to avoid modal flicker and enable branch selection below
