@@ -44,6 +44,8 @@ interface ExtendedProfile {
   role: ExtendedUserRole;
   branch_id: string | null;
   branch_context?: string | null;
+  region_id?: string | null;
+  district_id?: string | null;
   last_access: string | null;
   access_count: number | null;
   created_at: string;
@@ -140,18 +142,40 @@ const Index = () => {
     }
   };
 
+  const fetchDistrictsData = async () => {
+    try {
+      if ((extendedProfile?.role as string) === 'regional_manager') {
+        const { data: districtsData, error: districtsError } = await supabase
+          .from('districts')
+          .select('id, name, region_id')
+          .eq('region_id', extendedProfile.region_id)
+          .order('name');
+        
+        if (districtsError) throw districtsError;
+        setDistricts(districtsData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+      toast({
+        title: "Failed to load districts",
+        description: "Unable to fetch district list",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       // Check if Regional Manager needs to select district first
-      if ((extendedProfile?.role as string) === 'regional_manager') {
-        await fetchBranchesData();
+      if ((extendedProfile?.role as string) === 'regional_manager' && !extendedProfile?.branch_context) {
+        await fetchDistrictsData();
         setShowDistrictSelection(true);
         setLoading(false);
         return;
       }
 
       // Check if District Manager needs to select branch
-      if ((extendedProfile?.role as string) === 'district_manager') {
+      if ((extendedProfile?.role as string) === 'district_manager' && !extendedProfile?.branch_context) {
         await fetchBranchesData();
         setShowBranchSelection(true);
         setLoading(false);
@@ -528,8 +552,8 @@ const Index = () => {
 
   return (
     <>
-      {/* Full-screen glassmorphism overlay for branch selection */}
-      {showBranchSelection && (
+      {/* Full-screen glassmorphism overlay for branch/district selection */}
+      {(showBranchSelection || showDistrictSelection) && (
         <div 
           className="fixed inset-0 z-40" 
           style={{ 
@@ -777,7 +801,7 @@ const Index = () => {
 
       {/* Stock Details Modal */}
       <Dialog open={showStockModal} onOpenChange={setShowStockModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {modalStockType === 'low' ? 'Low Stock Items' : 'Critical Stock Items'}
@@ -970,7 +994,7 @@ const Index = () => {
         console.log('Dialog onOpenChange called with:', open);
         setShowEventModal(open);
       }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Event</DialogTitle>
           </DialogHeader>

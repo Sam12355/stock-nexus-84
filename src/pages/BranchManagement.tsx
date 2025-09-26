@@ -170,8 +170,8 @@ export default function BranchManagement() {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         location: formData.location.trim() || null,
-        region_id: formData.region_id,
-        district_id: formData.district_id
+        region_id: formData.region_id || null,
+        district_id: formData.district_id || null
       };
 
       if (editingBranch) {
@@ -300,7 +300,7 @@ export default function BranchManagement() {
               Add Branch
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingBranch ? 'Edit Branch' : 'Add New Branch'}

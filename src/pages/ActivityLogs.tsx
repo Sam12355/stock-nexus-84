@@ -33,6 +33,7 @@ const ActivityLogs = () => {
 
     try {
       const branchId = profile.branch_id || profile.branch_context;
+      const isAdmin = (profile.role as string) === 'admin';
 
       // Fetch movements (basic fields)
       const { data: movementsRaw, error: movementsError } = await supabase
@@ -43,13 +44,18 @@ const ActivityLogs = () => {
       if (movementsError) throw movementsError;
       const movements = movementsRaw || [];
 
-      // Fetch items for this branch and map id -> name
+      // Fetch items - for admin get all items, for others filter by branch
       const itemIds = Array.from(new Set(movements.map(m => m.item_id)));
-      const { data: itemsData, error: itemsError } = await supabase
+      let itemsQuery = supabase
         .from('items')
         .select('id, name, branch_id')
-        .eq('branch_id', branchId)
         .in('id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+      
+      if (!isAdmin && branchId) {
+        itemsQuery = itemsQuery.eq('branch_id', branchId);
+      }
+      
+      const { data: itemsData, error: itemsError } = await itemsQuery;
       if (itemsError) throw itemsError;
       const itemMap = new Map<string, string>((itemsData || []).map(i => [i.id, i.name]));
 
@@ -65,9 +71,9 @@ const ActivityLogs = () => {
         profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
       }
 
-      // Build movement activities for this branch only
+      // Build movement activities - for admin show all, for others filter by branch
       const movementActivities: ActivityLog[] = movements
-        .filter(m => itemMap.has(m.item_id))
+        .filter(m => isAdmin || itemMap.has(m.item_id))
         .map(movement => ({
           id: `movement-${movement.id}`,
           action: movement.movement_type === 'in' ? 'Stock received' : 'Stock dispensed',
@@ -79,20 +85,18 @@ const ActivityLogs = () => {
           details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units of ${itemMap.get(movement.item_id) || 'Unknown Item'}`
         }));
 
-      // Fetch general activity logs for this branch
-      let activityData = null;
-      let activityError = null;
+      // Fetch general activity logs - for admin get all, for others filter by branch
+      let activityQuery = supabase
+        .from('activity_logs')
+        .select('id, action, created_at, details, user_id')
+        .order('created_at', { ascending: false })
+        .limit(50);
       
-      if (branchId) {
-        const result = await supabase
-          .from('activity_logs')
-          .select('id, action, created_at, details, user_id')
-          .eq('branch_id', branchId)
-          .order('created_at', { ascending: false })
-          .limit(50);
-        activityData = result.data;
-        activityError = result.error;
+      if (!isAdmin && branchId) {
+        activityQuery = activityQuery.eq('branch_id', branchId);
       }
+      
+      const { data: activityData, error: activityError } = await activityQuery;
       if (activityError) {
         console.warn('activity_logs not accessible:', activityError);
       }
@@ -114,10 +118,15 @@ const ActivityLogs = () => {
       }
 
       // Get all items for name resolution in general activities
-      const { data: allItems } = await supabase
+      let allItemsQuery = supabase
         .from('items')
-        .select('id, name')
-        .eq('branch_id', branchId);
+        .select('id, name');
+      
+      if (!isAdmin && branchId) {
+        allItemsQuery = allItemsQuery.eq('branch_id', branchId);
+      }
+      
+      const { data: allItems } = await allItemsQuery;
       const allItemsMap = new Map<string, string>((allItems || []).map(i => [i.id, i.name]));
 
       const generalActivities: ActivityLog[] = (activityData || []).map(log => {
