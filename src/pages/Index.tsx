@@ -123,20 +123,43 @@ const Index = () => {
 
   const fetchBranchesData = async () => {
     try {
-      if ((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') {
+      console.log('Fetching branches for role:', extendedProfile?.role, 'district_id:', extendedProfile?.district_id);
+      
+      if ((extendedProfile?.role as string) === 'regional_manager') {
+        // Regional managers can see all branches in their region
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
-          .select('id, name, location')
+          .select('id, name, location, district_id')
+          .eq('region_id', extendedProfile.region_id)
           .order('name');
         
-        if (branchesError) throw branchesError;
+        if (branchesError) {
+          console.error('Regional manager branches error:', branchesError);
+          throw branchesError;
+        }
+        console.log('Regional manager branches loaded:', branchesData);
+        setBranches(branchesData || []);
+        
+      } else if ((extendedProfile?.role as string) === 'district_manager') {
+        // District managers can only see branches in their district
+        const { data: branchesData, error: branchesError } = await supabase
+          .from('branches')
+          .select('id, name, location, district_id')
+          .eq('district_id', extendedProfile.district_id)
+          .order('name');
+        
+        if (branchesError) {
+          console.error('District manager branches error:', branchesError);
+          throw branchesError;
+        }
+        console.log('District manager branches loaded:', branchesData);
         setBranches(branchesData || []);
       }
     } catch (error) {
       console.error('Error fetching branches:', error);
       toast({
         title: "Failed to load branches",
-        description: "Unable to fetch branch list",
+        description: error?.message || "Unable to fetch branch list",
         variant: "destructive",
       });
     }
@@ -144,21 +167,42 @@ const Index = () => {
 
   const fetchDistrictsData = async () => {
     try {
-      if ((extendedProfile?.role as string) === 'regional_manager') {
+      console.log('Fetching districts for regional manager. Region ID:', extendedProfile?.region_id);
+      
+      if ((extendedProfile?.role as string) === 'regional_manager' && extendedProfile.region_id) {
         const { data: districtsData, error: districtsError } = await supabase
           .from('districts')
           .select('id, name, region_id')
           .eq('region_id', extendedProfile.region_id)
           .order('name');
         
-        if (districtsError) throw districtsError;
+        if (districtsError) {
+          console.error('Districts fetch error:', districtsError);
+          throw districtsError;
+        }
+        
+        console.log('Districts loaded:', districtsData);
         setDistricts(districtsData || []);
+        
+        // Also fetch all branches in the region for later filtering
+        const { data: branchesData, error: branchesError } = await supabase
+          .from('branches')
+          .select('id, name, location, district_id')
+          .eq('region_id', extendedProfile.region_id)
+          .order('name');
+        
+        if (branchesError) {
+          console.error('Regional branches fetch error:', branchesError);
+        } else {
+          console.log('Regional branches loaded:', branchesData);
+          setBranches(branchesData || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching districts:', error);
       toast({
         title: "Failed to load districts",
-        description: "Unable to fetch district list",
+        description: error?.message || "Unable to fetch district list",
         variant: "destructive",
       });
     }
