@@ -15,9 +15,10 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
     if (profile && (profile.role as string) === 'admin') {
       navigate('/staff', { replace: true });
     }
-    // All other roles (district_manager, manager, assistant_manager, staff) go to dashboard
-    else if (profile && ['district_manager', 'manager', 'assistant_manager', 'staff'].includes(profile.role as string)) {
+    // All other roles (regional_manager, district_manager, manager, assistant_manager, staff) go to dashboard
+    else if (profile && ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff'].includes(profile.role as string)) {
       // They should access the dashboard, so don't redirect them away
+      navigate('/', { replace: true });
     }
   }, [profile?.role, navigate]);
 
