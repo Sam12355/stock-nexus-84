@@ -909,16 +909,8 @@ const Index = () => {
                         label: district.name
                       }))}
                       onChange={(selectedDistrict) => {
-                        if (selectedDistrict) {
-                          // Set selected district and fetch related branches
-                          setSelectedDistrictOption(selectedDistrict);
-                          
-                          // Filter branches by district
-                          const districtBranches = branches.filter(branch => 
-                            branch.district_id === selectedDistrict.value
-                          );
-                          setFilteredBranches(districtBranches);
-                        }
+                        // Use centralized handler to fetch branches from backend and toggle views
+                        handleDistrictSelection(selectedDistrict as any);
                       }}
                       placeholder="Select a district..."
                       isClearable={false}
@@ -973,7 +965,7 @@ const Index = () => {
             {/* Branch Selection */}
             <div>
               <Label>Available Branches</Label>
-              {branches.length === 0 ? (
+              {(filteredBranches.length === 0 && branches.length === 0) ? (
                 <div className="flex justify-center items-center h-20 text-muted-foreground">
                   Loading branches...
                 </div>
