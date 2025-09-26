@@ -132,15 +132,29 @@ const Staff = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // Filter staff based on user role
-      if (profile && (profile.role as string) !== 'admin') {
-        const userBranchId = profile.branch_id || profile.branch_context;
-        if (userBranchId && (profile.role === 'manager' || profile.role === 'assistant_manager')) {
-          query = query.eq('branch_id', userBranchId);
-          
-          // Assistant managers should only see staff, not managers
-          if (profile.role === 'assistant_manager') {
-            query = query.eq('role', 'staff');
+      // Define role hierarchy - users can only see lower level users
+      const roleHierarchy: Record<string, string[]> = {
+        'admin': ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff'],
+        'regional_manager': ['district_manager', 'manager', 'assistant_manager', 'staff'],
+        'district_manager': ['manager', 'assistant_manager', 'staff'],
+        'manager': ['assistant_manager', 'staff'],
+        'assistant_manager': ['staff'],
+        'staff': []
+      };
+
+      // Filter staff based on user role hierarchy
+      const userRole = profile.role as string;
+      const allowedRoles = roleHierarchy[userRole] || [];
+      
+      if (userRole !== 'admin') {
+        // Filter by allowed roles based on hierarchy
+        query = query.in('role', allowedRoles);
+        
+        // Also filter by branch for non-regional/district managers
+        if (userRole !== 'regional_manager' && userRole !== 'district_manager') {
+          const userBranchId = profile.branch_id || profile.branch_context;
+          if (userBranchId) {
+            query = query.eq('branch_id', userBranchId);
           }
         }
       }

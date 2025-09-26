@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { Textarea } from "@/components/ui/textarea";
 import Select2 from "react-select";
 import { 
   Package, 
@@ -935,11 +936,11 @@ const Index = () => {
             </div>
             <div>
               <Label htmlFor="event-date">Date *</Label>
-              <Input
-                id="event-date"
-                type="date"
-                value={newEvent.event_date ? new Date(newEvent.event_date).toISOString().split('T')[0] : ''}
-                onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+              <DateTimePicker
+                value={newEvent.event_date ? new Date(newEvent.event_date) : undefined}
+                onChange={(date) => setNewEvent({ ...newEvent, event_date: date ? date.toISOString() : '' })}
+                placeholder="Pick a date"
+                showTime={false}
               />
             </div>
             <div>

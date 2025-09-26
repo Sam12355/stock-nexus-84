@@ -12,6 +12,7 @@ interface DateTimePickerProps {
   onChange?: (date: Date | undefined) => void;
   placeholder?: string;
   className?: string;
+  showTime?: boolean;
 }
 
 export function DateTimePicker({
@@ -19,6 +20,7 @@ export function DateTimePicker({
   onChange,
   placeholder = "Pick a date and time",
   className,
+  showTime = true,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value);
   const [timeValue, setTimeValue] = React.useState<string>(
@@ -33,7 +35,7 @@ export function DateTimePicker({
     }
 
     const newDate = new Date(date);
-    if (timeValue) {
+    if (showTime && timeValue) {
       const [hours, minutes] = timeValue.split(":").map(Number);
       newDate.setHours(hours, minutes);
     }
@@ -44,7 +46,7 @@ export function DateTimePicker({
 
   const handleTimeChange = (time: string) => {
     setTimeValue(time);
-    if (selectedDate && time) {
+    if (showTime && selectedDate && time) {
       const [hours, minutes] = time.split(":").map(Number);
       const newDate = new Date(selectedDate);
       newDate.setHours(hours, minutes);
@@ -78,12 +80,14 @@ export function DateTimePicker({
           />
         </PopoverContent>
       </Popover>
-      <Input
-        type="time"
-        value={timeValue}
-        onChange={(e) => handleTimeChange(e.target.value)}
-        className="w-32"
-      />
+      {showTime && (
+        <Input
+          type="time"
+          value={timeValue}
+          onChange={(e) => handleTimeChange(e.target.value)}
+          className="w-32"
+        />
+      )}
     </div>
   );
 }
