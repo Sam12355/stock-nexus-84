@@ -213,7 +213,7 @@ const BranchAssignments = () => {
     if (profile && (profile.role as string) === 'admin') {
       fetchData();
     }
-  }, [profile]);
+  }, [profile?.role]);
 
   if (!profile || (profile.role as string) !== 'admin') {
     return (
