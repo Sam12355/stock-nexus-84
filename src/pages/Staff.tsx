@@ -197,6 +197,7 @@ const Staff = () => {
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
+            branch_id: selectedBranchId || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', selectedStaff.id);

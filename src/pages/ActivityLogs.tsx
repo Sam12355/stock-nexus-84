@@ -80,12 +80,19 @@ const ActivityLogs = () => {
         }));
 
       // Fetch general activity logs for this branch
-      const { data: activityData, error: activityError } = await supabase
-        .from('activity_logs')
-        .select('id, action, created_at, details, user_id')
-        .eq('branch_id', branchId)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      let activityData = null;
+      let activityError = null;
+      
+      if (branchId) {
+        const result = await supabase
+          .from('activity_logs')
+          .select('id, action, created_at, details, user_id')
+          .eq('branch_id', branchId)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        activityData = result.data;
+        activityError = result.error;
+      }
       if (activityError) {
         console.warn('activity_logs not accessible:', activityError);
       }
@@ -93,15 +100,15 @@ const ActivityLogs = () => {
       // Map user names for activity logs
       let activityUserMap = profileMap;
       if (activityData && activityData.length) {
-        const activityUserIds = Array.from(new Set(activityData.map(a => a.user_id).filter(Boolean)));
-        const missing = activityUserIds.filter(id => !activityUserMap.has(id));
+        const activityUserIds = Array.from(new Set(activityData.map((a: any) => a.user_id).filter(Boolean)));
+        const missing = activityUserIds.filter((id: string) => !activityUserMap.has(id));
         if (missing.length) {
           const { data: moreProfiles } = await supabase
             .from('profiles')
             .select('user_id, name')
             .in('user_id', missing);
           if (moreProfiles) {
-            moreProfiles.forEach(p => activityUserMap.set(p.user_id, p.name));
+            moreProfiles.forEach((p: any) => activityUserMap.set(p.user_id, p.name));
           }
         }
       }
