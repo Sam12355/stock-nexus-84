@@ -565,8 +565,8 @@ const Staff = () => {
                     </div>
                   )}
 
-                  {/* District Manager role selection */}
-                  {formData.role === 'district_manager' && (
+                  {/* District Manager role selection - only show district selection */}
+                  {formData.role === 'district_manager' && (profile?.role as string) === 'admin' && (
                     <>
                       <div>
                         <Label htmlFor="region">Region *</Label>
@@ -581,6 +581,22 @@ const Staff = () => {
                           menuPosition="fixed"
                           menuShouldBlockScroll
                           placeholder="Select region"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="district">District *</Label>
+                        <ReactSelect
+                          inputId="district"
+                          classNamePrefix="rs"
+                          options={districtOptions}
+                          value={districtOptions.find(o => o.value === selectedDistrictId) || null}
+                          onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
+                          styles={selectStyles}
+                          menuPortalTarget={document.body}
+                          menuPosition="fixed"
+                          menuShouldBlockScroll
+                          placeholder="Select district"
+                          isDisabled={!selectedRegionId}
                         />
                       </div>
                     </>
@@ -608,27 +624,6 @@ const Staff = () => {
 
                 </div>
 
-                {/* District selection for District Manager */}
-                {formData.role === 'district_manager' && (profile?.role as string) !== 'regional_manager' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="district">District *</Label>
-                      <ReactSelect
-                        inputId="district"
-                        classNamePrefix="rs"
-                        options={districtOptions}
-                        value={districtOptions.find(o => o.value === selectedDistrictId) || null}
-                        onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
-                        styles={selectStyles}
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        menuShouldBlockScroll
-                        placeholder="Select district"
-                        isDisabled={!selectedRegionId}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Security and Photo Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -914,35 +909,27 @@ const Staff = () => {
                 </div>
               )}
 
-              {/* District selection for district managers */}
+              {/* District selection for district managers - region auto-filled from district */}
               {formData.role === 'district_manager' && (
-                <>
-                  <div>
-                    <Label htmlFor="edit-region-for-district">Region *</Label>
-                    <ReactSelect
-                      id="edit-region-for-district"
-                      options={regionOptions}
-                      value={regionOptions.find(option => option.value === selectedRegionId) || null}
-                      onChange={(option) => setSelectedRegionId(option?.value || "")}
-                      placeholder="Select a region..."
-                      menuPortalTarget={document.body}
-                      styles={selectStyles}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-district">District *</Label>
-                    <ReactSelect
-                      id="edit-district"
-                      options={districtOptions}
-                      value={districtOptions.find(option => option.value === selectedDistrictId) || null}
-                      onChange={(option) => setSelectedDistrictId(option?.value || "")}
-                      placeholder="Select a district..."
-                      isDisabled={!selectedRegionId}
-                      menuPortalTarget={document.body}
-                      styles={selectStyles}
-                    />
-                  </div>
-                </>
+                <div>
+                  <Label htmlFor="edit-district">District *</Label>
+                  <ReactSelect
+                    id="edit-district"
+                    options={districtOptions}
+                    value={districtOptions.find(option => option.value === selectedDistrictId) || null}
+                    onChange={(option) => {
+                      setSelectedDistrictId(option?.value || "");
+                      // Auto-fill region from district
+                      const district = districts.find(d => d.id === option?.value);
+                      if (district) {
+                        setSelectedRegionId(district.region_id);
+                      }
+                    }}
+                    placeholder="Select a district..."
+                    menuPortalTarget={document.body}
+                    styles={selectStyles}
+                  />
+                </div>
               )}
 
               {selectedStaff && (
