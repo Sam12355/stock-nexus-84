@@ -152,8 +152,8 @@ const Items = () => {
     if (!validateForm()) return;
 
     try {
-      // Regional managers with branch_context don't need to select branch
-      if (profile?.role === 'regional_manager' && !profile?.branch_context && !selectedBranchId) {
+      // Regional and District managers must select a branch if no branch_context
+      if ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && !selectedBranchId) {
         toast({
           title: "Branch required",
           description: "Please select a branch for this item.",
@@ -307,12 +307,12 @@ const Items = () => {
     item.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canManageItems = profile?.role === 'regional_manager' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
+  const canManageItems = profile?.role === 'regional_manager' || profile?.role === 'district_manager' || profile?.role === 'manager' || profile?.role === 'assistant_manager';
 
   useEffect(() => {
     if (canManageItems) {
       fetchItems();
-      if (profile?.role === 'regional_manager') {
+      if (profile?.role === 'regional_manager' || profile?.role === 'district_manager') {
         supabase
           .from('branches')
           .select('id,name')

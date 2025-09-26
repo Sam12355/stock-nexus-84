@@ -221,8 +221,9 @@ const Staff = () => {
         setIsEditModalOpen(false);
       } else {
         // Create new staff member profile directly
-        // Regional managers with branch_context don't need to select branch
-        if ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && !selectedBranchId) {
+        // Validate branch selection for roles that require it
+        if (((profile?.role as string) === 'admin' && !selectedBranchId) ||
+            ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && !selectedBranchId)) {
           toast({
             title: "Branch required",
             description: "Please select a branch for this staff member.",
@@ -240,9 +241,11 @@ const Staff = () => {
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
-            branch_id: (profile?.role === 'regional_manager' || profile?.role === 'district_manager') 
-              ? (profile?.branch_context || selectedBranchId) 
-              : profile?.branch_id,
+            branch_id: ((profile?.role as string) === 'admin')
+              ? selectedBranchId
+              : ((profile?.role === 'regional_manager' || profile?.role === 'district_manager')
+                ? (profile?.branch_context || selectedBranchId)
+                : profile?.branch_id),
             access_count: 0
           }]);
 
