@@ -73,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Get users in this branch who should receive alerts
       const { data: users, error: usersError } = await supabase
         .from('profiles')
-        .select('phone, name, role')
+        .select('phone, name, role, notification_settings')
         .or(`branch_id.eq.${branch.id},role.in.(regional_manager,district_manager)`)
         .not('phone', 'is', null);
 
@@ -116,8 +116,22 @@ ${lowItems.map(item => {
 
 _Daily Stock Alert - Sushi Yama Inventory System_`;
 
-      // Send WhatsApp notifications to all users
-      for (const user of users || []) {
+      // Filter users who have WhatsApp, Stock Level Alerts, and Event Reminders enabled
+      const eligibleUsers = users?.filter(user => {
+        const userSettings = user.notification_settings || {};
+        const branchWhatsappEnabled = branch.notification_settings?.whatsapp;
+        const userWhatsappEnabled = userSettings.whatsapp;
+        const stockAlertsEnabled = userSettings.stockLevelAlerts;
+        
+        // User needs both WhatsApp (branch OR user level) AND Stock Level Alerts enabled
+        const whatsappOk = branchWhatsappEnabled || userWhatsappEnabled;
+        return whatsappOk && stockAlertsEnabled;
+      }) || [];
+
+      console.log(`Eligible users for daily stock alerts: ${eligibleUsers.length}`);
+
+      // Send WhatsApp notifications to eligible users
+      for (const user of eligibleUsers || []) {
         if (!user.phone) continue;
 
         try {

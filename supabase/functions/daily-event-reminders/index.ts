@@ -67,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Get users in this branch who should receive reminders
       const { data: users, error: usersError } = await supabase
         .from('profiles')
-        .select('phone, name, role')
+        .select('phone, name, role, notification_settings')
         .or(`branch_id.eq.${branch.id},role.in.(regional_manager,district_manager)`)
         .not('phone', 'is', null);
 
@@ -103,8 +103,22 @@ const handler = async (req: Request): Promise<Response> => {
 
       message += '_Daily Event Reminder - Sushi Yama Inventory System_';
 
-      // Send WhatsApp notifications to all users
-      for (const user of users || []) {
+      // Filter users who have WhatsApp and Event Reminders enabled
+      const eligibleUsers = users?.filter(user => {
+        const userSettings = user.notification_settings || {};
+        const branchWhatsappEnabled = branch.notification_settings?.whatsapp;
+        const userWhatsappEnabled = userSettings.whatsapp;
+        const eventRemindersEnabled = userSettings.eventReminders;
+        
+        // User needs both WhatsApp (branch OR user level) AND Event Reminders enabled
+        const whatsappOk = branchWhatsappEnabled || userWhatsappEnabled;
+        return whatsappOk && eventRemindersEnabled;
+      }) || [];
+
+      console.log(`Eligible users for daily event reminders: ${eligibleUsers.length}`);
+
+      // Send WhatsApp notifications to eligible users
+      for (const user of eligibleUsers || []) {
         if (!user.phone) continue;
 
         try {
