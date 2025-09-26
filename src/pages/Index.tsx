@@ -125,27 +125,12 @@ const Index = () => {
     try {
       console.log('Fetching branches for role:', extendedProfile?.role, 'district_id:', extendedProfile?.district_id);
       
-      if ((extendedProfile?.role as string) === 'regional_manager') {
-        // Regional managers can see all branches in their region
+      if ((extendedProfile?.role as string) === 'district_manager') {
+        // District managers can see all branches in their region (since district_id might be null)
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
           .select('id, name, location, district_id')
           .eq('region_id', extendedProfile.region_id)
-          .order('name');
-        
-        if (branchesError) {
-          console.error('Regional manager branches error:', branchesError);
-          throw branchesError;
-        }
-        console.log('Regional manager branches loaded:', branchesData);
-        setBranches(branchesData || []);
-        
-      } else if ((extendedProfile?.role as string) === 'district_manager') {
-        // District managers can only see branches in their district
-        const { data: branchesData, error: branchesError } = await supabase
-          .from('branches')
-          .select('id, name, location, district_id')
-          .eq('district_id', extendedProfile.district_id)
           .order('name');
         
         if (branchesError) {
@@ -183,20 +168,6 @@ const Index = () => {
         
         console.log('Districts loaded:', districtsData);
         setDistricts(districtsData || []);
-        
-        // Also fetch all branches in the region for later filtering
-        const { data: branchesData, error: branchesError } = await supabase
-          .from('branches')
-          .select('id, name, location, district_id')
-          .eq('region_id', extendedProfile.region_id)
-          .order('name');
-        
-        if (branchesError) {
-          console.error('Regional branches fetch error:', branchesError);
-        } else {
-          console.log('Regional branches loaded:', branchesData);
-          setBranches(branchesData || []);
-        }
       }
     } catch (error) {
       console.error('Error fetching districts:', error);
@@ -507,6 +478,27 @@ const Index = () => {
       });
     }
   };
+
+  // Handle role-based dialogs when profile is loaded
+  useEffect(() => {
+    if (extendedProfile) {
+      console.log('Profile loaded:', extendedProfile);
+      
+      if ((extendedProfile.role as string) === 'regional_manager') {
+        // Regional managers: region is auto-assigned, only need to select district
+        if (!extendedProfile.branch_context) {
+          setShowDistrictSelection(true);
+          fetchDistrictsData();
+        }
+      } else if ((extendedProfile.role as string) === 'district_manager') {
+        // District managers: show branch selection popup  
+        if (!extendedProfile.branch_context) {
+          setShowBranchSelection(true);
+          fetchBranchesData();
+        }
+      }
+    }
+  }, [extendedProfile]);
 
   useEffect(() => {
     if (profile) {
