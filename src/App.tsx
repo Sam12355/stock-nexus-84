@@ -16,6 +16,9 @@ import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import ActivityLogs from "./pages/ActivityLogs";
+import RegionManagement from "./pages/RegionManagement";
+import DistrictManagement from "./pages/DistrictManagement";
+import BranchManagement from "./pages/BranchManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +34,9 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/" element={<DashboardLayout><AdminRedirect><Index /></AdminRedirect></DashboardLayout>} />
+              <Route path="/regions" element={<DashboardLayout><RegionManagement /></DashboardLayout>} />
+              <Route path="/districts" element={<DashboardLayout><DistrictManagement /></DashboardLayout>} />
+              <Route path="/branches" element={<DashboardLayout><BranchManagement /></DashboardLayout>} />
               <Route path="/items" element={<DashboardLayout><Items /></DashboardLayout>} />
               <Route path="/stock" element={<DashboardLayout><Stock /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />

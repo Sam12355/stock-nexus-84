@@ -63,39 +63,59 @@ export type Database = {
         Row: {
           alert_frequency: string | null
           created_at: string
+          district_id: string | null
           id: string
           location: string | null
           manager_id: string | null
           name: string
           notification_settings: Json | null
+          region_id: string | null
           updated_at: string
         }
         Insert: {
           alert_frequency?: string | null
           created_at?: string
+          district_id?: string | null
           id?: string
           location?: string | null
           manager_id?: string | null
           name: string
           notification_settings?: Json | null
+          region_id?: string | null
           updated_at?: string
         }
         Update: {
           alert_frequency?: string | null
           created_at?: string
+          district_id?: string | null
           id?: string
           location?: string | null
           manager_id?: string | null
           name?: string
           notification_settings?: Json | null
+          region_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "branches_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "branches_manager_id_fkey"
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branches_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
             referencedColumns: ["id"]
           },
         ]
@@ -154,6 +174,41 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      districts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          region_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          region_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          region_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "districts_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
             referencedColumns: ["id"]
           },
         ]
@@ -265,6 +320,7 @@ export type Database = {
           branch_context: string | null
           branch_id: string | null
           created_at: string
+          district_id: string | null
           email: string
           id: string
           last_access: string | null
@@ -273,6 +329,7 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           position: string | null
+          region_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string | null
@@ -282,6 +339,7 @@ export type Database = {
           branch_context?: string | null
           branch_id?: string | null
           created_at?: string
+          district_id?: string | null
           email: string
           id?: string
           last_access?: string | null
@@ -290,6 +348,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           position?: string | null
+          region_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string | null
@@ -299,6 +358,7 @@ export type Database = {
           branch_context?: string | null
           branch_id?: string | null
           created_at?: string
+          district_id?: string | null
           email?: string
           id?: string
           last_access?: string | null
@@ -307,11 +367,62 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           position?: string | null
+          region_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          regional_manager_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          regional_manager_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          regional_manager_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regions_regional_manager_id_fkey"
+            columns: ["regional_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock: {
         Row: {

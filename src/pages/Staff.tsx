@@ -27,6 +27,8 @@ interface StaffMember {
   position?: string;
   role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
   branch_id?: string;
+  region_id?: string;
+  district_id?: string;
   last_access?: string;
   access_count: number;
   created_at: string;
@@ -66,7 +68,12 @@ const Staff = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
+  const [districts, setDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
+  const [filteredDistricts, setFilteredDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [selectedRegionId, setSelectedRegionId] = useState<string>("");
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string>("");
 
   const roleOptions = [
     { value: 'regional_manager', label: 'Regional Manager' },
@@ -89,6 +96,23 @@ const Staff = () => {
   const allowedRoleOptions = roleOptions.filter((o) => (allowedRoleValues as string[]).includes(o.value));
 
   const branchOptions = branches.map(b => ({ value: b.id, label: b.name }));
+  const regionOptions = regions.map(r => ({ value: r.id, label: r.name }));
+  const districtOptions = filteredDistricts.map(d => ({ value: d.id, label: d.name }));
+
+  // Filter districts based on selected region
+  useEffect(() => {
+    if (selectedRegionId) {
+      const regionDistricts = districts.filter(d => d.region_id === selectedRegionId);
+      setFilteredDistricts(regionDistricts);
+      // Clear district selection if current district doesn't belong to selected region
+      if (selectedDistrictId && !regionDistricts.find(d => d.id === selectedDistrictId)) {
+        setSelectedDistrictId('');
+      }
+    } else {
+      setFilteredDistricts([]);
+      setSelectedDistrictId('');
+    }
+  }, [selectedRegionId, districts, selectedDistrictId]);
 
   const selectStyles: any = {
     container: (base: any) => ({ ...base, zIndex: 999999 }),
@@ -220,6 +244,8 @@ const Staff = () => {
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
             branch_id: selectedBranchId || null,
+            region_id: selectedRegionId || null,
+            district_id: selectedDistrictId || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', selectedStaff.id);
@@ -399,6 +425,8 @@ const Staff = () => {
   useEffect(() => {
     if (canManageStaff) {
       fetchStaffMembers();
+      fetchRegions();
+      fetchDistricts();
       // Load all branches for admin, regional managers, and district managers
       if ((profile.role as string) === 'admin' || profile.role === 'regional_manager' || profile.role === 'district_manager') {
         console.log('Fetching branches for admin/manager role:', profile.role);
@@ -423,6 +451,34 @@ const Staff = () => {
       }
     }
   }, [canManageStaff, profile?.role]);
+
+  const fetchRegions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      setRegions(data || []);
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+    }
+  };
+
+  const fetchDistricts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('districts')
+        .select('id, name, region_id')
+        .order('name');
+      
+      if (error) throw error;
+      setDistricts(data || []);
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+    }
+  };
 
   if (!canManageStaff) {
     return (
@@ -521,6 +577,62 @@ const Staff = () => {
                 />
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
               </div>
+
+              {/* Region selection for Regional Managers */}
+              {formData.role === 'regional_manager' && (
+                <div>
+                  <Label htmlFor="region">Region *</Label>
+                  <ReactSelect
+                    inputId="region"
+                    classNamePrefix="rs"
+                    options={regionOptions}
+                    value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                    onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                    styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldBlockScroll
+                    placeholder="Select region"
+                  />
+                </div>
+              )}
+
+              {/* Region and District selection for District Managers */}
+              {formData.role === 'district_manager' && (
+                <>
+                  <div>
+                    <Label htmlFor="region">Region *</Label>
+                    <ReactSelect
+                      inputId="region"
+                      classNamePrefix="rs"
+                      options={regionOptions}
+                      value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                      onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                      styles={selectStyles}
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      menuShouldBlockScroll
+                      placeholder="Select region"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="district">District *</Label>
+                    <ReactSelect
+                      inputId="district"
+                      classNamePrefix="rs"
+                      options={districtOptions}
+                      value={districtOptions.find(o => o.value === selectedDistrictId) || null}
+                      onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
+                      styles={selectStyles}
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      menuShouldBlockScroll
+                      placeholder="Select district"
+                      isDisabled={!selectedRegionId}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Branch selection - show for admin and higher roles */}
               {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
@@ -806,6 +918,62 @@ const Staff = () => {
               />
               {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
             </div>
+
+            {/* Edit Region selection for Regional Managers */}
+            {formData.role === 'regional_manager' && (
+              <div>
+                <Label htmlFor="edit-region">Region *</Label>
+                <ReactSelect
+                  inputId="edit-region"
+                  classNamePrefix="rs"
+                  options={regionOptions}
+                  value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                  onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                  styles={selectStyles}
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  menuShouldBlockScroll
+                  placeholder="Select region"
+                />
+              </div>
+            )}
+
+            {/* Edit Region and District selection for District Managers */}
+            {formData.role === 'district_manager' && (
+              <>
+                <div>
+                  <Label htmlFor="edit-region">Region *</Label>
+                  <ReactSelect
+                    inputId="edit-region"
+                    classNamePrefix="rs"
+                    options={regionOptions}
+                    value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                    onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                    styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldBlockScroll
+                    placeholder="Select region"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-district">District *</Label>
+                  <ReactSelect
+                    inputId="edit-district"
+                    classNamePrefix="rs"
+                    options={districtOptions}
+                    value={districtOptions.find(o => o.value === selectedDistrictId) || null}
+                    onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
+                    styles={selectStyles}
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                    menuShouldBlockScroll
+                    placeholder="Select district"
+                    isDisabled={!selectedRegionId}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Branch selection for edit */}
             {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (

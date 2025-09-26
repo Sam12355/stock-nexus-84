@@ -12,7 +12,10 @@ import {
   LogOut,
   Package2,
   User,
-  FileText
+  FileText,
+  MapPin,
+  Building,
+  Building2
 } from 'lucide-react';
 import {
   Sidebar,
@@ -32,7 +35,25 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
-    roles: ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+    roles: ['admin', 'regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff']
+  },
+  {
+    title: "Region Management",
+    url: "/regions",
+    icon: MapPin,
+    roles: ['admin']
+  },
+  {
+    title: "District Management",
+    url: "/districts",
+    icon: Building,
+    roles: ['admin']
+  },
+  {
+    title: "Branch Management",
+    url: "/branches",
+    icon: Building2,
+    roles: ['admin']
   },
   {
     title: "Manage Staff",
@@ -87,7 +108,7 @@ export function AppSidebar() {
   };
 
   const filteredItems = menuItems.filter(item => 
-    !profile?.role || item.roles.includes(profile.role)
+    !profile?.role || item.roles.includes(profile.role as string)
   );
 
   return (
