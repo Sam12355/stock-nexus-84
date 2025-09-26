@@ -248,6 +248,9 @@ const Settings = () => {
           [settingType]: value
         };
 
+        console.log(`Updating ${settingType} notification setting to:`, value);
+        console.log('Updated notification settings:', updatedSettings);
+
         const { error } = await supabase
           .from("branches")
           .update({
@@ -255,7 +258,18 @@ const Settings = () => {
           })
           .eq("id", branch.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Database update error:', error);
+          throw error;
+        }
+        
+        console.log(`Successfully updated ${settingType} in database`);
+        
+        // Update local branch state to reflect the change
+        setBranch(prev => prev ? {
+          ...prev,
+          notification_settings: updatedSettings
+        } : prev);
       }
 
       console.log(`${settingType} notification setting saved:`, value);

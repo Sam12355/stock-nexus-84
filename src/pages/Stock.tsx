@@ -117,8 +117,10 @@ const Stock = () => {
         description: `Stock ${movementType === 'in' ? 'added' : 'removed'} successfully`,
       });
 
-      // Check if stock alert should be sent
-      await checkAndSendStockAlert(selectedItem, data.new_quantity);
+      // Check if stock alert should be sent based on the result
+      if (data && data.new_quantity !== undefined) {
+        await checkAndSendStockAlert(selectedItem, data.new_quantity);
+      }
 
       // Refresh stock data
       fetchStockData();
@@ -193,7 +195,9 @@ _Sushi Yama Inventory System_`;
           itemName: item.items.name,
           currentQuantity: newQuantity,
           thresholdLevel: threshold,
-          alertType
+          alertType,
+          userPhone: profile.phone,
+          branchWhatsAppEnabled: branchData?.notification_settings?.whatsapp
         });
 
         // Use the same direct method that works in Settings
