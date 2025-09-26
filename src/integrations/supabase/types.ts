@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           alert_frequency: string | null
           created_at: string
+          description: string | null
           district_id: string | null
           id: string
           location: string | null
@@ -75,6 +76,7 @@ export type Database = {
         Insert: {
           alert_frequency?: string | null
           created_at?: string
+          description?: string | null
           district_id?: string | null
           id?: string
           location?: string | null
@@ -87,6 +89,7 @@ export type Database = {
         Update: {
           alert_frequency?: string | null
           created_at?: string
+          description?: string | null
           district_id?: string | null
           id?: string
           location?: string | null
