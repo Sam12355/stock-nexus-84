@@ -21,7 +21,9 @@ import {
   Cloud,
   Thermometer,
   Droplets,
-  Wind
+  Wind,
+  Settings,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -79,7 +81,7 @@ interface WeatherData {
 }
 
 const Index = () => {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const { toast } = useToast();
   
   // Cast profile to extended type
@@ -139,6 +141,7 @@ const Index = () => {
       if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context) {
         await fetchBranchesData();
         setShowBranchSelection(true);
+        setLoading(false);
         return;
       }
 
@@ -685,26 +688,47 @@ const Index = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Link to="/items">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Package className="h-4 w-4 mr-2" />
-                    Manage Items
+              {extendedProfile?.role === 'staff' ? (
+                <div className="space-y-2">
+                  <Link to="/stock">
+                    <Button variant="outline" className="w-full justify-start">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Manage Stock
+                    </Button>
+                  </Link>
+                  <Link to="/settings">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Button>
+                  </Link>
+                  <Button variant="outline" className="w-full justify-start" onClick={signOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
                   </Button>
-                </Link>
-                <Link to="/stock">
-                  <Button variant="outline" className="w-full justify-start">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Stock Movement
-                  </Button>
-                </Link>
-                <Link to="/staff">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Staff
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link to="/items">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Package className="h-4 w-4 mr-2" />
+                      Manage Items
+                    </Button>
+                  </Link>
+                  <Link to="/stock">
+                    <Button variant="outline" className="w-full justify-start">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Stock Movement
+                    </Button>
+                  </Link>
+                  <Link to="/staff">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Staff
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

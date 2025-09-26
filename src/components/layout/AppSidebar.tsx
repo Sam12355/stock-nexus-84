@@ -113,10 +113,10 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1">
               {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} className="justify-start">
                     <NavLink
                       to={item.url}
-                      className={`sidebar-nav-item ${isActive(item.url) ? 'active' : ''}`}
+                      className="flex items-center gap-2"
                       onClick={() => {
                         if (isMobile) {
                           setOpen(false);
@@ -156,10 +156,10 @@ export function AppSidebar() {
               <div className="px-4 space-y-1">
                 <SidebarMenu className="space-y-1 list-none">
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild isActive={isActive('/settings')} className="justify-start">
                       <NavLink
                         to="/settings"
-                        className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`}
+                        className="flex items-center gap-2"
                         onClick={() => {
                           if (isMobile) {
                             setOpen(false);
