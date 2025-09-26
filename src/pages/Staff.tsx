@@ -909,26 +909,34 @@ const Staff = () => {
                 </div>
               )}
 
-              {/* District selection for district managers - region auto-filled from district */}
+              {/* District Manager role selection - show region first, then district */}
               {formData.role === 'district_manager' && (
-                <div>
-                  <Label htmlFor="edit-district">District *</Label>
-                  <ReactSelect
-                    id="edit-district"
-                    options={districtOptions}
-                    value={districtOptions.find(option => option.value === selectedDistrictId) || null}
-                    onChange={(option) => {
-                      setSelectedDistrictId(option?.value || "");
-                      // Auto-fill region from district
-                      const district = districts.find(d => d.id === option?.value);
-                      if (district) {
-                        setSelectedRegionId(district.region_id);
-                      }
-                    }}
-                    placeholder="Select a district..."
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-region">Region *</Label>
+                    <ReactSelect
+                      id="edit-region"
+                      options={regionOptions}
+                      value={regionOptions.find(option => option.value === selectedRegionId) || null}
+                      onChange={(option) => setSelectedRegionId(option?.value || "")}
+                      placeholder="Select a region..."
+                      menuPortalTarget={document.body}
+                      styles={selectStyles}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-district">District *</Label>
+                    <ReactSelect
+                      id="edit-district"
+                      options={districtOptions}
+                      value={districtOptions.find(option => option.value === selectedDistrictId) || null}
+                      onChange={(option) => setSelectedDistrictId(option?.value || "")}
+                      placeholder="Select a district..."
+                      menuPortalTarget={document.body}
+                      styles={selectStyles}
+                      isDisabled={!selectedRegionId}
+                    />
+                  </div>
                 </div>
               )}
 

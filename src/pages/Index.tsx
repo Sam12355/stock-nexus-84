@@ -451,12 +451,6 @@ const Index = () => {
         setBranches(prev => prev && prev.length ? prev : districtBranches);
       }
 
-      // Debug outputs for verification
-      console.log('District selected:', selectedOption);
-      console.log('Filtered branches for district:', districtBranches);
-      const names = districtBranches.map((b: any) => b.name).join(', ') || 'No branches found';
-      try { window.alert(`Branches for ${selectedOption.label}: ${names}`); } catch {}
-      toast({ title: 'Branches loaded', description: `${districtBranches.length} branches found for ${selectedOption.label}` });
 
       setSelectedDistrictOption(selectedOption);
       // Keep district selection visible to avoid modal flicker and enable branch selection below
