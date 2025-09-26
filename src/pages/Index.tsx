@@ -837,92 +837,99 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* District Selection Modal for Regional Managers */}
-      <Dialog open={showDistrictSelection} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md z-50">
+      {/* Combined District and Branch Selection Modal for Regional Managers */}
+      <Dialog open={showDistrictSelection || showBranchSelection} onOpenChange={() => {}}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <DialogHeader>
-            <DialogTitle>Select Your District</DialogTitle>
+            <DialogTitle>
+              {showDistrictSelection ? 'Select District & Branch' : 'Select Your Branch'}
+            </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Please select which district you'd like to manage first.
+              {showDistrictSelection 
+                ? 'Please select which district and branch you\'d like to manage.' 
+                : 'Please select which branch you\'d like to manage. This will be your working context.'
+              }
             </p>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Available Districts</Label>
-              {districts.length === 0 ? (
-                <div className="flex justify-center items-center h-20 text-muted-foreground">
-                  Loading districts...
-                </div>
-              ) : (
-                <div className="mt-2">
-                  <Select2
-                    options={districts.map(district => ({
-                      value: district.id,
-                      label: district.name
-                    }))}
-                    onChange={handleDistrictSelection}
-                    placeholder="Select a district..."
-                    isClearable={false}
-                    isSearchable={true}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (provided) => ({
-                        ...provided,
-                        backgroundColor: 'hsl(var(--background))',
-                        borderColor: 'hsl(var(--border))',
-                        color: 'hsl(var(--foreground))',
-                        minHeight: '44px',
-                        fontSize: '14px'
-                      }),
-                      menu: (provided) => ({
-                        ...provided,
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        zIndex: 9999
-                      }),
-                      option: (provided, state) => ({
-                        ...provided,
-                        backgroundColor: state.isSelected 
-                          ? 'hsl(var(--accent))' 
-                          : state.isFocused 
-                          ? 'hsl(var(--accent) / 0.5)' 
-                          : 'transparent',
-                        color: 'hsl(var(--popover-foreground))',
-                        padding: '12px 16px'
-                      }),
-                      singleValue: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--foreground))'
-                      }),
-                      placeholder: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--muted-foreground))'
-                      }),
-                      input: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--foreground))'
-                      })
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          <div className="max-h-[calc(90vh-180px)] overflow-y-auto space-y-6">
+            {/* District Selection for Regional Managers */}
+            {showDistrictSelection && (
+              <div>
+                <Label>Available Districts</Label>
+                {districts.length === 0 ? (
+                  <div className="flex justify-center items-center h-20 text-muted-foreground">
+                    Loading districts...
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    <Select2
+                      options={districts.map(district => ({
+                        value: district.id,
+                        label: district.name
+                      }))}
+                      onChange={(selectedDistrict) => {
+                        if (selectedDistrict) {
+                          // Set selected district and fetch related branches
+                          setSelectedDistrictId(selectedDistrict.value);
+                          
+                          // Filter branches by district
+                          const districtBranches = branches.filter(branch => 
+                            branch.district_id === selectedDistrict.value
+                          );
+                          setFilteredBranches(districtBranches);
+                        }
+                      }}
+                      placeholder="Select a district..."
+                      isClearable={false}
+                      isSearchable={true}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      styles={{
+                        control: (provided) => ({
+                          ...provided,
+                          backgroundColor: 'hsl(var(--background))',
+                          borderColor: 'hsl(var(--border))',
+                          color: 'hsl(var(--foreground))',
+                          minHeight: '44px',
+                          fontSize: '14px'
+                        }),
+                        menu: (provided) => ({
+                          ...provided,
+                          backgroundColor: 'hsl(var(--popover))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          zIndex: 9999
+                        }),
+                        option: (provided, state) => ({
+                          ...provided,
+                          backgroundColor: state.isSelected 
+                            ? 'hsl(var(--accent))' 
+                            : state.isFocused 
+                            ? 'hsl(var(--accent) / 0.5)' 
+                            : 'transparent',
+                          color: 'hsl(var(--popover-foreground))',
+                          padding: '12px 16px'
+                        }),
+                        singleValue: (provided) => ({
+                          ...provided,
+                          color: 'hsl(var(--foreground))'
+                        }),
+                        placeholder: (provided) => ({
+                          ...provided,
+                          color: 'hsl(var(--muted-foreground))'
+                        }),
+                        input: (provided) => ({
+                          ...provided,
+                          color: 'hsl(var(--foreground))'
+                        })
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
-      {/* Branch Selection Modal for Regional/District Managers */}
-      <Dialog open={showBranchSelection} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md z-50">
-          <DialogHeader>
-            <DialogTitle>Select Your Branch</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Please select which branch you'd like to manage. This will be your working context.
-            </p>
-          </DialogHeader>
-          <div className="space-y-4">
+            {/* Branch Selection */}
             <div>
               <Label>Available Branches</Label>
               {branches.length === 0 ? (
@@ -942,6 +949,7 @@ const Index = () => {
                     isSearchable={true}
                     className="react-select-container"
                     classNamePrefix="react-select"
+                    isDisabled={showDistrictSelection && !selectedDistrictId}
                     styles={{
                       control: (provided) => ({
                         ...provided,

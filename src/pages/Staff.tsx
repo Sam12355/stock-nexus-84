@@ -503,246 +503,263 @@ const Staff = () => {
               Add Staff Member
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 Add New Staff Member
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter full name"
-                />
-                {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Enter email address"
-                />
-                {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                />
-                {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  placeholder="e.g., Warehouse Assistant"
-                />
-                {formErrors.position && <p className="text-sm text-red-500 mt-1">{formErrors.position}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="role">Role *</Label>
-                <ReactSelect
-                  inputId="role"
-                  classNamePrefix="rs"
-                  options={allowedRoleOptions}
-                  value={roleOptions.find(o => o.value === formData.role)}
-                  onChange={(opt) => {
-                    const val = (opt as any)?.value;
-                    console.log('Role selected:', val);
-                    setFormData({ ...formData, role: val });
-                  }}
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll
-                  placeholder="Select role"
-                />
-                {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
-              </div>
-
-              {/* Regional Manager role selection */}
-              {formData.role === 'regional_manager' && (
-                <div>
-                  <Label htmlFor="region">Region *</Label>
-                  <ReactSelect
-                    inputId="region"
-                    classNamePrefix="rs"
-                    options={regionOptions}
-                    value={regionOptions.find(o => o.value === selectedRegionId) || null}
-                    onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
-                    styles={selectStyles}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldBlockScroll
-                    placeholder="Select region"
-                  />
-                </div>
-              )}
-
-              {/* District Manager role selection */}
-              {formData.role === 'district_manager' && (
-                <>
+            <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Basic Info Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="region">Region *</Label>
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Enter full name"
+                    />
+                    {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="Enter email address"
+                    />
+                    {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Enter phone number"
+                    />
+                    {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="position">Position</Label>
+                    <Input
+                      id="position"
+                      value={formData.position}
+                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      placeholder="e.g., Warehouse Assistant"
+                    />
+                    {formErrors.position && <p className="text-sm text-red-500 mt-1">{formErrors.position}</p>}
+                  </div>
+                </div>
+
+                {/* Role and Location Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="role">Role *</Label>
                     <ReactSelect
-                      inputId="region"
+                      inputId="role"
                       classNamePrefix="rs"
-                      options={regionOptions}
-                      value={regionOptions.find(o => o.value === selectedRegionId) || null}
-                      onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                      options={allowedRoleOptions}
+                      value={roleOptions.find(o => o.value === formData.role)}
+                      onChange={(opt) => {
+                        const val = (opt as any)?.value;
+                        console.log('Role selected:', val);
+                        setFormData({ ...formData, role: val });
+                      }}
                       styles={selectStyles}
                       menuPortalTarget={document.body}
                       menuPosition="fixed"
                       menuShouldBlockScroll
-                      placeholder="Select region"
+                      placeholder="Select role"
                     />
+                    {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
                   </div>
-                  <div>
-                    <Label htmlFor="district">District *</Label>
-                    <ReactSelect
-                      inputId="district"
-                      classNamePrefix="rs"
-                      options={districtOptions}
-                      value={districtOptions.find(o => o.value === selectedDistrictId) || null}
-                      onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
-                      styles={selectStyles}
-                      menuPortalTarget={document.body}
-                      menuPosition="fixed"
-                      menuShouldBlockScroll
-                      placeholder="Select district"
-                      isDisabled={!selectedRegionId}
-                    />
-                  </div>
-                </>
-              )}
 
-              {/* Regional Manager creating District Manager */}
-              {(profile?.role as string) === 'regional_manager' && formData.role === 'district_manager' && (
-                <div>
-                  <Label htmlFor="district">District *</Label>
-                  <ReactSelect
-                    inputId="district"
-                    classNamePrefix="rs"
-                    options={districtOptions}
-                    value={districtOptions.find(o => o.value === selectedDistrictId) || null}
-                    onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
-                    styles={selectStyles}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldBlockScroll
-                    placeholder="Select district"
-                    isDisabled={!selectedRegionId}
-                  />
+                  {/* Regional Manager role selection */}
+                  {formData.role === 'regional_manager' && (
+                    <div>
+                      <Label htmlFor="region">Region *</Label>
+                      <ReactSelect
+                        inputId="region"
+                        classNamePrefix="rs"
+                        options={regionOptions}
+                        value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                        onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll
+                        placeholder="Select region"
+                      />
+                    </div>
+                  )}
+
+                  {/* District Manager role selection */}
+                  {formData.role === 'district_manager' && (
+                    <>
+                      <div>
+                        <Label htmlFor="region">Region *</Label>
+                        <ReactSelect
+                          inputId="region"
+                          classNamePrefix="rs"
+                          options={regionOptions}
+                          value={regionOptions.find(o => o.value === selectedRegionId) || null}
+                          onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
+                          styles={selectStyles}
+                          menuPortalTarget={document.body}
+                          menuPosition="fixed"
+                          menuShouldBlockScroll
+                          placeholder="Select region"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Regional Manager creating District Manager */}
+                  {(profile?.role as string) === 'regional_manager' && formData.role === 'district_manager' && (
+                    <div>
+                      <Label htmlFor="district">District *</Label>
+                      <ReactSelect
+                        inputId="district"
+                        classNamePrefix="rs"
+                        options={districtOptions}
+                        value={districtOptions.find(o => o.value === selectedDistrictId) || null}
+                        onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll
+                        placeholder="Select district"
+                        isDisabled={!selectedRegionId}
+                      />
+                    </div>
+                  )}
+
+                  {/* Branch selection - show for admin and higher roles */}
+                  {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
+                    <div>
+                      <Label htmlFor="branch">Branch *</Label>
+                      <ReactSelect
+                        inputId="branch"
+                        classNamePrefix="rs"
+                        options={branchOptions}
+                        value={branchOptions.find(o => o.value === selectedBranchId) || null}
+                        onChange={(opt) => {
+                          const val = (opt as any)?.value;
+                          console.log('Branch selected:', val);
+                          setSelectedBranchId(val);
+                        }}
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll
+                        placeholder="Select branch"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Branch selection - show for admin and higher roles */}
-              {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
-                <div>
-                  <Label htmlFor="branch">Branch *</Label>
-                  <ReactSelect
-                    inputId="branch"
-                    classNamePrefix="rs"
-                    options={branchOptions}
-                    value={branchOptions.find(o => o.value === selectedBranchId) || null}
-                    onChange={(opt) => {
-                      const val = (opt as any)?.value;
-                      console.log('Branch selected:', val);
-                      setSelectedBranchId(val);
-                    }}
-                    styles={selectStyles}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldBlockScroll
-                    placeholder="Select branch"
-                  />
-                </div>
-              )}
-
-              {/* Password field for all creators except staff */}
-              {profile?.role !== 'staff' && (
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Enter password for new user"
-                  />
-                  {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="photo_url">Staff Photo</Label>
-                <Input
-                  id="photo_url"
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `${Date.now()}.${fileExt}`;
-                        const filePath = `staff/${fileName}`;
-
-                        const { error: uploadError } = await supabase.storage
-                          .from('user-uploads')
-                          .upload(filePath, file);
-
-                        if (uploadError) throw uploadError;
-
-                        const { data } = supabase.storage
-                          .from('user-uploads')
-                          .getPublicUrl(filePath);
-
-                        setFormData({ ...formData, photo_url: data.publicUrl });
-                      } catch (error) {
-                        console.error('Error uploading photo:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to upload photo",
-                          variant: "destructive",
-                        });
-                      }
-                    }
-                  }}
-                />
-                {formData.photo_url && (
-                  <div className="mt-2">
-                    <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                {/* District selection for District Manager */}
+                {formData.role === 'district_manager' && (profile?.role as string) !== 'regional_manager' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="district">District *</Label>
+                      <ReactSelect
+                        inputId="district"
+                        classNamePrefix="rs"
+                        options={districtOptions}
+                        value={districtOptions.find(o => o.value === selectedDistrictId) || null}
+                        onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll
+                        placeholder="Select district"
+                        isDisabled={!selectedRegionId}
+                      />
+                    </div>
                   </div>
                 )}
-                {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
-              </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Add Staff Member</Button>
-              </div>
-            </form>
+                {/* Security and Photo Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Password field for all creators except staff */}
+                  {profile?.role !== 'staff' && (
+                    <div>
+                      <Label htmlFor="password">Password *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Enter password for new user"
+                      />
+                      {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="photo_url">Staff Photo</Label>
+                    <Input
+                      id="photo_url"
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `${Date.now()}.${fileExt}`;
+                            const filePath = `staff/${fileName}`;
+
+                            const { error: uploadError } = await supabase.storage
+                              .from('user-uploads')
+                              .upload(filePath, file);
+
+                            if (uploadError) throw uploadError;
+
+                            const { data } = supabase.storage
+                              .from('user-uploads')
+                              .getPublicUrl(filePath);
+
+                            setFormData({ ...formData, photo_url: data.publicUrl });
+                          } catch (error) {
+                            console.error('Error uploading photo:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to upload photo",
+                              variant: "destructive",
+                            });
+                          }
+                        }
+                      }}
+                    />
+                    {formData.photo_url && (
+                      <div className="mt-2">
+                        <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                      </div>
+                    )}
+                    {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Add Staff Member</Button>
+                </div>
+              </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -863,245 +880,6 @@ const Staff = () => {
       </Card>
 
       {/* Edit Modal */}
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" />
-              Edit Staff Member
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Full Name *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter full name"
-              />
-              {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="edit-email">Email Address *</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="Enter email address"
-              />
-              {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="edit-phone">Phone Number</Label>
-              <Input
-                id="edit-phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="Enter phone number"
-              />
-              {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="edit-position">Position</Label>
-              <Input
-                id="edit-position"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                placeholder="e.g., Warehouse Assistant"
-              />
-              {formErrors.position && <p className="text-sm text-red-500 mt-1">{formErrors.position}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="edit-role">Role *</Label>
-              <ReactSelect
-                inputId="edit-role"
-                classNamePrefix="rs"
-                options={allowedRoleOptions}
-                value={roleOptions.find(o => o.value === formData.role)}
-                onChange={(opt) => {
-                  const val = (opt as any)?.value;
-                  console.log('Edit role selected:', val);
-                  setFormData({ ...formData, role: val });
-                }}
-                styles={selectStyles}
-                menuPortalTarget={document.body}
-                menuPosition="fixed"
-                menuShouldBlockScroll
-                placeholder="Select role"
-              />
-              {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
-            </div>
-
-            {/* Edit Regional Manager role selection */}
-            {formData.role === 'regional_manager' && (
-              <div>
-                <Label htmlFor="edit-region">Region *</Label>
-                <ReactSelect
-                  inputId="edit-region"
-                  classNamePrefix="rs"
-                  options={regionOptions}
-                  value={regionOptions.find(o => o.value === selectedRegionId) || null}
-                  onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll
-                  placeholder="Select region"
-                />
-              </div>
-            )}
-
-            {/* Edit District Manager role selection */}
-            {formData.role === 'district_manager' && (
-              <>
-                <div>
-                  <Label htmlFor="edit-region">Region *</Label>
-                  <ReactSelect
-                    inputId="edit-region"
-                    classNamePrefix="rs"
-                    options={regionOptions}
-                    value={regionOptions.find(o => o.value === selectedRegionId) || null}
-                    onChange={(opt) => setSelectedRegionId((opt as any)?.value || '')}
-                    styles={selectStyles}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldBlockScroll
-                    placeholder="Select region"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-district">District *</Label>
-                  <ReactSelect
-                    inputId="edit-district"
-                    classNamePrefix="rs"
-                    options={districtOptions}
-                    value={districtOptions.find(o => o.value === selectedDistrictId) || null}
-                    onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
-                    styles={selectStyles}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
-                    menuShouldBlockScroll
-                    placeholder="Select district"
-                    isDisabled={!selectedRegionId}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Edit Regional Manager creating District Manager */}
-            {(profile?.role as string) === 'regional_manager' && formData.role === 'district_manager' && (
-              <div>
-                <Label htmlFor="edit-district">District *</Label>
-                <ReactSelect
-                  inputId="edit-district"
-                  classNamePrefix="rs"
-                  options={districtOptions}
-                  value={districtOptions.find(o => o.value === selectedDistrictId) || null}
-                  onChange={(opt) => setSelectedDistrictId((opt as any)?.value || '')}
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll
-                  placeholder="Select district"
-                />
-              </div>
-            )}
-
-            {/* Branch selection for edit */}
-            {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
-              <div>
-                <Label htmlFor="edit-branch">Branch *</Label>
-                <ReactSelect
-                  inputId="edit-branch"
-                  classNamePrefix="rs"
-                  options={branchOptions}
-                  value={branchOptions.find(o => o.value === selectedBranchId) || branchOptions.find(o => o.value === selectedStaff?.branch_id)}
-                  onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
-                  styles={selectStyles}
-                  menuPortalTarget={document.body}
-                  menuPosition="fixed"
-                  menuShouldBlockScroll
-                  placeholder="Select branch"
-                />
-              </div>
-            )}
-
-            {/* Password field for edit - masked, optional */}
-            {profile?.role !== 'staff' && (
-              <div>
-                <Label htmlFor="edit-password">Password</Label>
-                <Input
-                  id="edit-password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="******** (leave blank to keep current)"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Leave empty to keep current password.</p>
-                {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="edit-photo_url">Staff Photo</Label>
-              <Input
-                id="edit-photo_url"
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    try {
-                      const fileExt = file.name.split('.').pop();
-                      const fileName = `${Date.now()}.${fileExt}`;
-                      const filePath = `staff/${fileName}`;
-
-                      const { error: uploadError } = await supabase.storage
-                        .from('user-uploads')
-                        .upload(filePath, file);
-
-                      if (uploadError) throw uploadError;
-
-                      const { data } = supabase.storage
-                        .from('user-uploads')
-                        .getPublicUrl(filePath);
-
-                      setFormData({ ...formData, photo_url: data.publicUrl });
-                    } catch (error) {
-                      console.error('Error uploading photo:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to upload photo",
-                        variant: "destructive",
-                      });
-                    }
-                  }
-                }}
-              />
-              {formData.photo_url && (
-                <div className="mt-2">
-                  <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
-                </div>
-              )}
-              {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Update Staff Member</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
