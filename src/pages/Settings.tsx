@@ -84,6 +84,32 @@ const Settings = () => {
     };
   });
 
+  // Persist notifications to localStorage on change
+  useEffect(() => {
+    if (profile?.id) {
+      try {
+        localStorage.setItem(`notifications_${profile.id}`, JSON.stringify(notifications));
+      } catch (e) {
+        console.error('Error saving notifications to localStorage:', e);
+      }
+    }
+  }, [notifications, profile?.id]);
+
+  // Hydrate notifications from localStorage (preferred over DB)
+  useEffect(() => {
+    if (!profile?.id) return;
+    const saved = localStorage.getItem(`notifications_${profile.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setNotifications(parsed);
+        hasTouchedNotificationsRef.current = true; // prevent DB overwrite
+      } catch (e) {
+        console.error('Error parsing saved notifications on hydrate:', e);
+      }
+    }
+  }, [profile?.id]);
+
   // Branch settings
   const [branchSettings, setBranchSettings] = useState({
     alertFrequency: "weekly",
