@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Thermometer, CalendarDays, MapPin, Droplets, Wind } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Event {
   id: string;
@@ -23,26 +24,41 @@ interface Slide {
 }
 
 export function SlideshowHeader() {
+  const { profile } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [events, setEvents] = useState<Event[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [branchLocation, setBranchLocation] = useState<string>('');
 
+  // Only show slideshow for management roles
+  const showSlideshow = profile && ['regional_manager', 'district_manager', 'manager', 'assistant_manager'].includes(profile.role as string);
+
   // Fetch branch location and events
   useEffect(() => {
+    if (!showSlideshow) return;
+    
     const fetchBranchData = async () => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('branch_context')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user?.user?.id) return;
 
-      if (profile?.branch_context) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('branch_context, branch_id, role')
+          .eq('user_id', user.user.id)
+          .single();
+
+        if (!profileData) return;
+
+        // Use branch_context for regional/district managers, branch_id for others
+        const branchId = profileData.branch_context || profileData.branch_id;
+        if (!branchId) return;
+
         const { data: branch } = await supabase
           .from('branches')
           .select('location')
-          .eq('id', profile.branch_context)
+          .eq('id', branchId)
           .single();
         
         if (branch?.location) {
@@ -52,16 +68,18 @@ export function SlideshowHeader() {
         const { data: events } = await supabase
           .from('calendar_events')
           .select('id, title, event_date')
-          .eq('branch_id', profile.branch_context)
+          .eq('branch_id', branchId)
           .gte('event_date', new Date().toISOString())
           .order('event_date', { ascending: true })
           .limit(5);
         
         if (events) setEvents(events);
+      } catch (error) {
+        console.error('Error fetching branch data:', error);
       }
     };
     fetchBranchData();
-  }, []);
+  }, [showSlideshow]);
 
   // Fetch weather based on branch location
   useEffect(() => {
@@ -187,6 +205,11 @@ export function SlideshowHeader() {
 
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  // Don't show slideshow for non-management roles
+  if (!showSlideshow) {
+    return null;
+  }
 
   if (slides.length === 0) {
     return (

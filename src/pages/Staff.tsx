@@ -756,7 +756,7 @@ const Staff = () => {
                   inputId="edit-branch"
                   classNamePrefix="rs"
                   options={branchOptions}
-                  value={branchOptions.find(o => o.value === (selectedBranchId || selectedStaff?.branch_id || "")) || null}
+                  value={branchOptions.find(o => o.value === selectedBranchId) || branchOptions.find(o => o.value === selectedStaff?.branch_id)}
                   onChange={(opt) => setSelectedBranchId((opt as any)?.value)}
                   styles={selectStyles}
                   menuPortalTarget={document.body}

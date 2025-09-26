@@ -601,35 +601,37 @@ const Index = () => {
                 />
               </div>
               
-              {/* Events List */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">Upcoming Events</h4>
-                {events.length > 0 ? (
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {events.map((event) => (
-                      <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                          <div>
-                            <p className="font-medium">{event.title}</p>
-                            <p className="text-sm text-muted-foreground">{event.description}</p>
+              {/* Events List - Show for management roles only */}
+              {['regional_manager', 'district_manager', 'manager', 'assistant_manager'].includes(extendedProfile?.role!) && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Upcoming Events</h4>
+                  {events.length > 0 ? (
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {events.map((event) => (
+                        <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <div>
+                              <p className="font-medium">{event.title}</p>
+                              <p className="text-sm text-muted-foreground">{event.description}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {new Date(event.event_date).toLocaleDateString()}
+                            </p>
+                            <Badge variant="outline">{event.event_type}</Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {new Date(event.event_date).toLocaleDateString()}
-                          </p>
-                          <Badge variant="outline">{event.event_type}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No upcoming events
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No upcoming events
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
