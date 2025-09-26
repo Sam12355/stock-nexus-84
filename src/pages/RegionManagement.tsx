@@ -46,7 +46,7 @@ export default function RegionManagement() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    regional_manager_id: ''
+    regional_manager_id: 'unassigned'
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -123,7 +123,7 @@ export default function RegionManagement() {
       const regionData = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        regional_manager_id: formData.regional_manager_id || null
+        regional_manager_id: formData.regional_manager_id === 'unassigned' ? null : formData.regional_manager_id || null
       };
 
       if (editingRegion) {
@@ -193,7 +193,7 @@ export default function RegionManagement() {
     setFormData({
       name: '',
       description: '',
-      regional_manager_id: ''
+      regional_manager_id: 'unassigned'
     });
     setEditingRegion(null);
     setIsModalOpen(false);
@@ -204,7 +204,7 @@ export default function RegionManagement() {
     setFormData({
       name: region.name,
       description: region.description || '',
-      regional_manager_id: region.regional_manager_id || ''
+      regional_manager_id: region.regional_manager_id || 'unassigned'
     });
     setEditingRegion(region);
     setIsModalOpen(true);
@@ -284,7 +284,7 @@ export default function RegionManagement() {
                     <SelectValue placeholder="Select regional manager" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Manager Assigned</SelectItem>
+                    <SelectItem value="unassigned">No Manager Assigned</SelectItem>
                     {regionalManagers.map((manager) => (
                       <SelectItem key={manager.id} value={manager.id}>
                         {manager.name}
