@@ -168,8 +168,21 @@ const Stock = () => {
           .eq('id', branchId)
           .single();
 
-        if (branchError || !branchData?.notification_settings?.whatsapp) {
-          console.log('WhatsApp notifications disabled for branch, skipping stock alert');
+        // Determine if WhatsApp alerts are enabled: branch OR user local preference
+        let localWhatsapp = false;
+        try {
+          const saved = localStorage.getItem(`notifications_${profile?.id}`);
+          if (saved) localWhatsapp = !!JSON.parse(saved)?.whatsapp;
+        } catch (e) {
+          console.warn('Failed to read local notification prefs:', e);
+        }
+        const whatsappEnabled = (!!branchData?.notification_settings?.whatsapp) || localWhatsapp;
+
+        if (branchError || !whatsappEnabled) {
+          console.log('WhatsApp notifications disabled (branch+local):', {
+            branch: !!branchData?.notification_settings?.whatsapp,
+            local: localWhatsapp
+          });
           return;
         }
 
