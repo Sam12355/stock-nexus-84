@@ -985,10 +985,14 @@ const Index = () => {
               ) : (
                 <div className="mt-2">
                   <Select2
-                    options={(filteredBranches.length > 0 ? filteredBranches : branches).map(branch => ({
-                      value: branch.id,
-                      label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
-                    }))}
+                    options={(() => {
+                      const opts = (filteredBranches.length > 0 ? filteredBranches : branches).map(branch => ({
+                        value: branch.id,
+                        label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
+                      }));
+                      console.log('Select2 options for branches:', opts);
+                      return opts;
+                    })()}
                     onChange={handleBranchSelection}
                     placeholder="Select a branch..."
                     isClearable={false}
@@ -996,6 +1000,7 @@ const Index = () => {
                     className="react-select-container"
                     classNamePrefix="react-select"
                     isDisabled={showDistrictSelection && !selectedDistrictOption}
+                    key={`branches-${selectedDistrictOption?.value || 'none'}`}
                     styles={{
                       control: (provided) => ({
                         ...provided,
