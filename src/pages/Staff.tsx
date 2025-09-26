@@ -222,10 +222,15 @@ const Staff = () => {
         });
         setIsEditModalOpen(false);
       } else {
-        // Create new staff member profile directly
-        // Validate branch selection for roles that require it
-        if (((profile?.role as string) === 'admin' && !selectedBranchId) ||
-            ((profile?.role === 'regional_manager' || profile?.role === 'district_manager') && !profile?.branch_context && !selectedBranchId)) {
+        // Create new staff member via backend function (requires password)
+        const creatorRole = profile?.role as string;
+        const requiredBranchId = (creatorRole === 'admin')
+          ? selectedBranchId
+          : ((creatorRole === 'regional_manager' || creatorRole === 'district_manager')
+            ? (profile?.branch_context || selectedBranchId)
+            : profile?.branch_id);
+
+        if (!requiredBranchId) {
           toast({
             title: "Branch required",
             description: "Please select a branch for this staff member.",
@@ -234,30 +239,31 @@ const Staff = () => {
           return;
         }
 
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ 
-            name: formData.name.trim(),
-            email: formData.email.trim(),
-            phone: formData.phone.trim() || null,
-            position: formData.position.trim() || null,
-            role: formData.role,
-            photo_url: formData.photo_url.trim() || null,
-            branch_id: ((profile?.role as string) === 'admin')
-              ? selectedBranchId
-              : ((profile?.role === 'regional_manager' || profile?.role === 'district_manager')
-                ? (profile?.branch_context || selectedBranchId)
-                : profile?.branch_id),
-            access_count: 0
-          }]);
+        if (creatorRole !== 'staff' && (!formData.password || formData.password.length < 6)) {
+          setFormErrors((prev) => ({ ...prev, password: 'Password must be at least 6 characters' }));
+          toast({ title: 'Password required', description: 'Please provide a valid password for the new user.', variant: 'destructive' });
+          return;
+        }
 
-        if (error) throw error;
+        const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+          body: {
+            email: formData.email.trim(),
+            password: formData.password,
+            name: formData.name.trim(),
+            role: formData.role,
+            branch_id: requiredBranchId,
+            position: formData.position.trim() || null,
+            phone: formData.phone.trim() || null,
+            photo_url: formData.photo_url.trim() || null,
+          }
+        });
+
+        if (fnError || !fnData?.success) {
+          throw new Error(fnError?.message || fnData?.error || 'Failed to create user');
+        }
 
         // Log activity
         try {
-          const branchId = (profile?.role === 'regional_manager' || profile?.role === 'district_manager') 
-            ? (profile?.branch_context || selectedBranchId) 
-            : profile?.branch_id;
           await supabase.rpc('log_user_activity', {
             p_action: 'staff_created',
             p_details: JSON.stringify({ name: formData.name, role: formData.role })
@@ -509,8 +515,8 @@ const Staff = () => {
                 </div>
               )}
 
-              {/* Password field for non-staff and non-admin users */}
-              {profile?.role !== 'staff' && (profile?.role as string) !== 'admin' && (
+              {/* Password field for all creators except staff */}
+              {profile?.role !== 'staff' && (
                 <div>
                   <Label htmlFor="password">Password *</Label>
                   <Input

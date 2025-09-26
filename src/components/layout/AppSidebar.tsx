@@ -116,7 +116,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)} className="justify-start">
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                        className={({ isActive }) => `flex items-center gap-2 rounded-md px-2 py-1.5 ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
                         onClick={() => {
                           if (isMobile) {
                             setOpen(false);
@@ -124,7 +124,7 @@ export function AppSidebar() {
                         }}
                       >
                         <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span className="text-sidebar-foreground">{item.title}</span>}
+                        {!isCollapsed && <span>{item.title}</span>}
                       </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -159,7 +159,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={isActive('/settings')} className="justify-start">
                         <NavLink
                           to="/settings"
-                          className="flex items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                          className={({ isActive }) => `flex items-center gap-2 rounded-md px-2 py-1.5 ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
                           onClick={() => {
                             if (isMobile) {
                               setOpen(false);
@@ -167,7 +167,7 @@ export function AppSidebar() {
                           }}
                         >
                           <Settings className="h-4 w-4" />
-                          {!isCollapsed && <span className="text-sidebar-foreground">Settings</span>}
+                          {!isCollapsed && <span>Settings</span>}
                         </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

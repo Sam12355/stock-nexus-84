@@ -106,7 +106,7 @@ const Index = () => {
     title: '',
     description: '',
     event_date: new Date() as Date | undefined,
-    event_type: 'reminder'
+    event_type: 'reorder'
   });
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
   const hasFetchedWeatherRef = useRef(false);
@@ -359,7 +359,7 @@ const Index = () => {
         title: '',
         description: '',
         event_date: new Date(),
-        event_type: 'reminder'
+        event_type: 'reorder'
       });
     } catch (error: any) {
       console.error('Error adding event:', error);
