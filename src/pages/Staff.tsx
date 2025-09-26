@@ -880,6 +880,214 @@ const Staff = () => {
       </Card>
 
       {/* Edit Modal */}
+      <Dialog open={Boolean(selectedStaff)} onOpenChange={(open) => !open && setSelectedStaff(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Staff Member
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-name">Full Name *</Label>
+                  <Input
+                    id="edit-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter full name"
+                  />
+                  {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-email">Email Address *</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email address"
+                    disabled={Boolean(selectedStaff)}
+                  />
+                  {formErrors.email && <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-phone">Phone Number</Label>
+                  <Input
+                    id="edit-phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="Enter phone number"
+                  />
+                  {formErrors.phone && <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-position">Position</Label>
+                  <Input
+                    id="edit-position"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="Enter job position"
+                  />
+                  {formErrors.position && <p className="text-sm text-red-500 mt-1">{formErrors.position}</p>}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-role">Role *</Label>
+                <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="district_manager">District Manager</SelectItem>
+                    <SelectItem value="regional_manager">Regional Manager</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
+              </div>
+
+              {/* Branch selection for roles that need it */}
+              {['manager', 'assistant_manager', 'staff'].includes(formData.role) && (
+                <div>
+                  <Label htmlFor="edit-branch">Branch *</Label>
+                  <ReactSelect
+                    id="edit-branch"
+                    options={branchOptions}
+                    value={branchOptions.find(option => option.value === selectedBranchId) || null}
+                    onChange={(option) => setSelectedBranchId(option?.value || "")}
+                    placeholder="Select a branch..."
+                    menuPortalTarget={document.body}
+                    styles={selectStyles}
+                  />
+                </div>
+              )}
+
+              {/* Region selection for regional managers */}
+              {formData.role === 'regional_manager' && (
+                <div>
+                  <Label htmlFor="edit-region">Region *</Label>
+                  <ReactSelect
+                    id="edit-region"
+                    options={regionOptions}
+                    value={regionOptions.find(option => option.value === selectedRegionId) || null}
+                    onChange={(option) => setSelectedRegionId(option?.value || "")}
+                    placeholder="Select a region..."
+                    menuPortalTarget={document.body}
+                    styles={selectStyles}
+                  />
+                </div>
+              )}
+
+              {/* District selection for district managers */}
+              {formData.role === 'district_manager' && (
+                <>
+                  <div>
+                    <Label htmlFor="edit-region-for-district">Region *</Label>
+                    <ReactSelect
+                      id="edit-region-for-district"
+                      options={regionOptions}
+                      value={regionOptions.find(option => option.value === selectedRegionId) || null}
+                      onChange={(option) => setSelectedRegionId(option?.value || "")}
+                      placeholder="Select a region..."
+                      menuPortalTarget={document.body}
+                      styles={selectStyles}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-district">District *</Label>
+                    <ReactSelect
+                      id="edit-district"
+                      options={districtOptions}
+                      value={districtOptions.find(option => option.value === selectedDistrictId) || null}
+                      onChange={(option) => setSelectedDistrictId(option?.value || "")}
+                      placeholder="Select a district..."
+                      isDisabled={!selectedRegionId}
+                      menuPortalTarget={document.body}
+                      styles={selectStyles}
+                    />
+                  </div>
+                </>
+              )}
+
+              {selectedStaff && (
+                <div>
+                  <Label htmlFor="edit-password">New Password (leave blank to keep current)</Label>
+                  <Input
+                    id="edit-password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Enter new password (optional)"
+                  />
+                  {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="edit-photo_url">Staff Photo</Label>
+                <Input
+                  id="edit-photo_url"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Date.now()}.${fileExt}`;
+                        const filePath = `staff/${fileName}`;
+
+                        const { error: uploadError } = await supabase.storage
+                          .from('user-uploads')
+                          .upload(filePath, file);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data } = supabase.storage
+                          .from('user-uploads')
+                          .getPublicUrl(filePath);
+
+                        setFormData({ ...formData, photo_url: data.publicUrl });
+                      } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to upload photo",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }}
+                />
+                {formData.photo_url && (
+                  <div className="mt-2">
+                    <img src={formData.photo_url} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                  </div>
+                )}
+                {formErrors.photo_url && <p className="text-sm text-red-500 mt-1">{formErrors.photo_url}</p>}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setSelectedStaff(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Staff Member</Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

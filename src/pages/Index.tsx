@@ -123,10 +123,10 @@ const Index = () => {
 
   const fetchBranchesData = async () => {
     try {
-      console.log('Fetching branches for role:', extendedProfile?.role, 'district_id:', extendedProfile?.district_id);
+      console.log('Fetching branches for role:', extendedProfile?.role, 'region_id:', extendedProfile?.region_id);
       
-      if ((extendedProfile?.role as string) === 'district_manager') {
-        // District managers can see all branches in their region (since district_id might be null)
+      if (extendedProfile?.region_id) {
+        // Both regional and district managers can see all branches in their region
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
           .select('id, name, location, district_id')
@@ -134,11 +134,14 @@ const Index = () => {
           .order('name');
         
         if (branchesError) {
-          console.error('District manager branches error:', branchesError);
+          console.error('Branches fetch error:', branchesError);
           throw branchesError;
         }
-        console.log('District manager branches loaded:', branchesData);
+        console.log('Branches loaded:', branchesData);
         setBranches(branchesData || []);
+      } else {
+        console.log('No region_id found for user');
+        setBranches([]);
       }
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -155,6 +158,7 @@ const Index = () => {
       console.log('Fetching districts for regional manager. Region ID:', extendedProfile?.region_id);
       
       if ((extendedProfile?.role as string) === 'regional_manager' && extendedProfile.region_id) {
+        // Fetch districts in the region
         const { data: districtsData, error: districtsError } = await supabase
           .from('districts')
           .select('id, name, region_id')
@@ -168,6 +172,9 @@ const Index = () => {
         
         console.log('Districts loaded:', districtsData);
         setDistricts(districtsData || []);
+        
+        // Also fetch branches for the regional manager
+        await fetchBranchesData();
       }
     } catch (error) {
       console.error('Error fetching districts:', error);
@@ -485,7 +492,7 @@ const Index = () => {
       console.log('Profile loaded:', extendedProfile);
       
       if ((extendedProfile.role as string) === 'regional_manager') {
-        // Regional managers: region is auto-assigned, only need to select district
+        // Regional managers: region is auto-assigned, need to select district and branch
         if (!extendedProfile.branch_context) {
           setShowDistrictSelection(true);
           fetchDistrictsData();
