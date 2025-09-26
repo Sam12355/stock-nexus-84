@@ -41,7 +41,8 @@ const staffSchema = z.object({
   role: z.enum(['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff'], {
     required_error: "Role is required"
   }),
-  photo_url: z.string().url().optional().or(z.literal(""))
+  photo_url: z.string().url().optional().or(z.literal("")),
+  password: z.string().min(6, "Password must be at least 6 characters").optional()
 });
 
 const Staff = () => {
@@ -59,7 +60,8 @@ const Staff = () => {
     phone: "",
     position: "",
     role: "staff" as 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff',
-    photo_url: ""
+    photo_url: "",
+    password: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
@@ -326,7 +328,8 @@ const Staff = () => {
       phone: "",
       position: "",
       role: "staff" as 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff',
-      photo_url: ""
+      photo_url: "",
+      password: ""
     });
     setFormErrors({});
     setSelectedStaff(null);
@@ -341,7 +344,8 @@ const Staff = () => {
       phone: staff.phone || "",
       position: staff.position || "",
       role: staff.role,
-      photo_url: staff.photo_url || ""
+      photo_url: staff.photo_url || "",
+      password: ""
     });
     setFormErrors({});
     setIsEditModalOpen(true);
@@ -502,6 +506,21 @@ const Staff = () => {
                     menuShouldBlockScroll
                     placeholder="Select branch"
                   />
+                </div>
+              )}
+
+              {/* Password field for non-staff and non-admin users */}
+              {profile?.role !== 'staff' && (profile?.role as string) !== 'admin' && (
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Enter password for new user"
+                  />
+                  {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
                 </div>
               )}
 

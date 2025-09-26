@@ -948,11 +948,11 @@ const Index = () => {
                   <SelectValue placeholder="Select event type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="reorder">Reorder</SelectItem>
                   <SelectItem value="delivery">Delivery</SelectItem>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="alert">Alert</SelectItem>
+                  <SelectItem value="expiry">Expiry</SelectItem>
+                  <SelectItem value="usage_spike">Usage Spike</SelectItem>
                 </SelectContent>
               </Select>
             </div>

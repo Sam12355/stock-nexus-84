@@ -114,18 +114,18 @@ export function AppSidebar() {
               {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} className="justify-start">
-                    <NavLink
-                      to={item.url}
-                      className="flex items-center gap-2"
-                      onClick={() => {
-                        if (isMobile) {
-                          setOpen(false);
-                        }
-                      }}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                        onClick={() => {
+                          if (isMobile) {
+                            setOpen(false);
+                          }
+                        }}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span className="text-sidebar-foreground">{item.title}</span>}
+                      </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -157,32 +157,32 @@ export function AppSidebar() {
                 <SidebarMenu className="space-y-1 list-none">
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive('/settings')} className="justify-start">
-                      <NavLink
-                        to="/settings"
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          if (isMobile) {
-                            setOpen(false);
-                          }
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                        {!isCollapsed && <span>Settings</span>}
-                      </NavLink>
+                        <NavLink
+                          to="/settings"
+                          className="flex items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                          onClick={() => {
+                            if (isMobile) {
+                              setOpen(false);
+                            }
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                          {!isCollapsed && <span className="text-sidebar-foreground">Settings</span>}
+                        </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={signOut}
-                        className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        {!isCollapsed && <span className="ml-3">Sign Out</span>}
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={signOut}
+                          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          {!isCollapsed && <span className="ml-3 text-sidebar-foreground">Sign Out</span>}
+                        </Button>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
