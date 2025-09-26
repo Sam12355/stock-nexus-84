@@ -433,92 +433,94 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notification Preferences
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Stock Level Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when stock is low</p>
+        {/* Notification Settings - hidden for staff */}
+        {profile.role !== 'staff' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notification Preferences
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Stock Level Alerts</Label>
+                    <p className="text-sm text-muted-foreground">Get notified when stock is low</p>
+                  </div>
+                  <Switch
+                    checked={notifications.stockAlerts}
+                    onCheckedChange={(checked) => {
+                      setHasTouchedNotifications(true);
+                      hasTouchedNotificationsRef.current = true;
+                      setNotifications((prev) => ({ ...prev, stockAlerts: checked }));
+                    }}
+                  />
                 </div>
-                <Switch
-                  checked={notifications.stockAlerts}
-                  onCheckedChange={(checked) => {
-                    setHasTouchedNotifications(true);
-                    hasTouchedNotificationsRef.current = true;
-                    setNotifications((prev) => ({ ...prev, stockAlerts: checked }));
-                  }}
-                />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Event Reminders</Label>
+                    <p className="text-sm text-muted-foreground">Get reminders for calendar events</p>
+                  </div>
+                  <Switch
+                    checked={notifications.eventReminders}
+                    onCheckedChange={(checked) => {
+                      setHasTouchedNotifications(true);
+                      hasTouchedNotificationsRef.current = true;
+                      setNotifications((prev) => ({ ...prev, eventReminders: checked }));
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Email Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive notifications via email</p>
+                  </div>
+                  <Switch
+                    checked={notifications.email}
+                    onCheckedChange={async (checked) => {
+                      setHasTouchedNotifications(true);
+                      hasTouchedNotificationsRef.current = true;
+                      setNotifications((prev) => ({ ...prev, email: checked }));
+                      await saveNotificationSetting('email', checked);
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>SMS Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
+                  </div>
+                  <Switch
+                    checked={notifications.sms}
+                    onCheckedChange={async (checked) => {
+                      setHasTouchedNotifications(true);
+                      hasTouchedNotificationsRef.current = true;
+                      setNotifications((prev) => ({ ...prev, sms: checked }));
+                      await saveNotificationSetting('sms', checked);
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>WhatsApp Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive notifications via WhatsApp</p>
+                  </div>
+                  <Switch
+                    checked={notifications.whatsapp}
+                    onCheckedChange={handleWhatsAppToggle}
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Event Reminders</Label>
-                  <p className="text-sm text-muted-foreground">Get reminders for calendar events</p>
-                </div>
-                <Switch
-                  checked={notifications.eventReminders}
-                  onCheckedChange={(checked) => {
-                    setHasTouchedNotifications(true);
-                    hasTouchedNotificationsRef.current = true;
-                    setNotifications((prev) => ({ ...prev, eventReminders: checked }));
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                </div>
-                <Switch
-                  checked={notifications.email}
-                  onCheckedChange={async (checked) => {
-                    setHasTouchedNotifications(true);
-                    hasTouchedNotificationsRef.current = true;
-                    setNotifications((prev) => ({ ...prev, email: checked }));
-                    await saveNotificationSetting('email', checked);
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>SMS Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
-                </div>
-                <Switch
-                  checked={notifications.sms}
-                  onCheckedChange={async (checked) => {
-                    setHasTouchedNotifications(true);
-                    hasTouchedNotificationsRef.current = true;
-                    setNotifications((prev) => ({ ...prev, sms: checked }));
-                    await saveNotificationSetting('sms', checked);
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>WhatsApp Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive notifications via WhatsApp</p>
-                </div>
-                <Switch
-                  checked={notifications.whatsapp}
-                  onCheckedChange={handleWhatsAppToggle}
-                />
-              </div>
-            </div>
-
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+)}
 
         {/* Branch Settings */}
         {(profile.role === "manager" ||

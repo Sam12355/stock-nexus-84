@@ -65,11 +65,14 @@ export function SlideshowHeader() {
           setBranchLocation(branch.location);
         }
 
+        const toLocalDateString = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        const todayLocal = toLocalDateString(new Date());
+
         const { data: events } = await supabase
           .from('calendar_events')
           .select('id, title, event_date')
           .eq('branch_id', branchId)
-          .gte('event_date', new Date().toISOString())
+          .gte('event_date', todayLocal)
           .order('event_date', { ascending: true })
           .limit(5);
         

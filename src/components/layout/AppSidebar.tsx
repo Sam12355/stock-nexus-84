@@ -74,7 +74,7 @@ const menuItems = [
 
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
-  const { state, setOpen } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === 'collapsed';
@@ -119,7 +119,7 @@ export function AppSidebar() {
                         className={({ isActive }) => `flex items-center gap-2 rounded-md px-2 py-1.5 ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
                         onClick={() => {
                           if (isMobile) {
-                            setOpen(false);
+                            setOpenMobile(false);
                           }
                         }}
                       >
@@ -162,7 +162,7 @@ export function AppSidebar() {
                           className={({ isActive }) => `flex items-center gap-2 rounded-md px-2 py-1.5 ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
                           onClick={() => {
                             if (isMobile) {
-                              setOpen(false);
+                              setOpenMobile(false);
                             }
                           }}
                         >

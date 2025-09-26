@@ -84,8 +84,9 @@ export function NotificationsDropdown() {
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const toLocalDateString = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
+      const weekFromNow = toLocalDateString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
       const { data, error } = await supabase
         .from('calendar_events')

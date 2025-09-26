@@ -217,7 +217,7 @@ const Index = () => {
       let eventsQuery = supabase
         .from('calendar_events')
         .select('*')
-        .gte('event_date', new Date().toISOString().split('T')[0])
+        .gte('event_date', format(new Date(), 'yyyy-MM-dd'))
         .order('event_date', { ascending: true })
         .limit(5);
 
