@@ -67,11 +67,9 @@ const Staff = () => {
     password: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
   const [districts, setDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
   const [filteredDistricts, setFilteredDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>("");
 
@@ -95,7 +93,6 @@ const Staff = () => {
   const allowedRoleValues = allowedRolesByCreator[profile?.role as string] || [];
   const allowedRoleOptions = roleOptions.filter((o) => (allowedRoleValues as string[]).includes(o.value));
 
-  const branchOptions = branches.map(b => ({ value: b.id, label: b.name }));
   const regionOptions = regions.map(r => ({ value: r.id, label: r.name }));
   const districtOptions = filteredDistricts.map(d => ({ value: d.id, label: d.name }));
 
@@ -243,7 +240,6 @@ const Staff = () => {
             position: formData.position.trim() || null,
             role: formData.role,
             photo_url: formData.photo_url.trim() || null,
-            branch_id: selectedBranchId || null,
             region_id: selectedRegionId || null,
             district_id: selectedDistrictId || null,
             updated_at: new Date().toISOString()
@@ -280,20 +276,6 @@ const Staff = () => {
       } else {
         // Create new staff member via backend function (requires password)
         const creatorRole = profile?.role as string;
-        const requiredBranchId = (creatorRole === 'admin')
-          ? selectedBranchId
-          : ((creatorRole === 'regional_manager' || creatorRole === 'district_manager')
-            ? (profile?.branch_context || selectedBranchId)
-            : profile?.branch_id);
-
-        if (!requiredBranchId) {
-          toast({
-            title: "Branch required",
-            description: "Please select a branch for this staff member.",
-            variant: "destructive",
-          });
-          return;
-        }
 
         if (creatorRole !== 'staff' && (!formData.password || formData.password.length < 6)) {
           setFormErrors((prev) => ({ ...prev, password: 'Password must be at least 6 characters' }));
@@ -307,7 +289,8 @@ const Staff = () => {
             password: formData.password,
             name: formData.name.trim(),
             role: formData.role,
-            branch_id: requiredBranchId,
+            region_id: selectedRegionId || null,
+            district_id: selectedDistrictId || null,
             position: formData.position.trim() || null,
             phone: formData.phone.trim() || null,
             photo_url: formData.photo_url.trim() || null,
@@ -399,7 +382,8 @@ const Staff = () => {
 
   const openEditModal = (staff: StaffMember) => {
     setSelectedStaff(staff);
-    setSelectedBranchId(staff.branch_id || "");
+    setSelectedRegionId(staff.region_id || "");
+    setSelectedDistrictId(staff.district_id || "");
     setFormData({
       name: staff.name,
       email: staff.email,
@@ -427,28 +411,6 @@ const Staff = () => {
       fetchStaffMembers();
       fetchRegions();
       fetchDistricts();
-      // Load all branches for admin, regional managers, and district managers
-      if ((profile.role as string) === 'admin' || profile.role === 'regional_manager' || profile.role === 'district_manager') {
-        console.log('Fetching branches for admin/manager role:', profile.role);
-        supabase
-          .from('branches')
-          .select('id,name')
-          .order('name', { ascending: true })
-          .then(({ data, error }) => {
-            console.log('Branches fetch result:', { data, error });
-            if (error) {
-              console.error('Error fetching branches:', error);
-              toast({
-                title: "Error loading branches",
-                description: error.message,
-                variant: "destructive",
-              });
-            } else {
-              setBranches(data || []);
-              console.log('Branches set to state:', data);
-            }
-          });
-      }
     }
   }, [canManageStaff, profile?.role]);
 
@@ -644,28 +606,6 @@ const Staff = () => {
                     </div>
                   )}
 
-                  {/* Branch selection - show for admin and higher roles */}
-                  {((profile?.role as string) === 'admin' || profile?.role === 'regional_manager' || profile?.role === 'district_manager') && (
-                    <div>
-                      <Label htmlFor="branch">Branch *</Label>
-                      <ReactSelect
-                        inputId="branch"
-                        classNamePrefix="rs"
-                        options={branchOptions}
-                        value={branchOptions.find(o => o.value === selectedBranchId) || null}
-                        onChange={(opt) => {
-                          const val = (opt as any)?.value;
-                          console.log('Branch selected:', val);
-                          setSelectedBranchId(val);
-                        }}
-                        styles={selectStyles}
-                        menuPortalTarget={document.body}
-                        menuPosition="fixed"
-                        menuShouldBlockScroll
-                        placeholder="Select branch"
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* District selection for District Manager */}
@@ -957,21 +897,6 @@ const Staff = () => {
                 {formErrors.role && <p className="text-sm text-red-500 mt-1">{formErrors.role}</p>}
               </div>
 
-              {/* Branch selection for roles that need it */}
-              {['manager', 'assistant_manager', 'staff'].includes(formData.role) && (
-                <div>
-                  <Label htmlFor="edit-branch">Branch *</Label>
-                  <ReactSelect
-                    id="edit-branch"
-                    options={branchOptions}
-                    value={branchOptions.find(option => option.value === selectedBranchId) || null}
-                    onChange={(option) => setSelectedBranchId(option?.value || "")}
-                    placeholder="Select a branch..."
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                  />
-                </div>
-              )}
 
               {/* Region selection for regional managers */}
               {formData.role === 'regional_manager' && (
