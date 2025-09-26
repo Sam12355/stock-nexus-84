@@ -15,11 +15,8 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
     if (profile && (profile.role as string) === 'admin') {
       navigate('/staff', { replace: true });
     }
-    // All other roles (regional_manager, district_manager, manager, assistant_manager, staff) go to dashboard
-    else if (profile && ['regional_manager', 'district_manager', 'manager', 'assistant_manager', 'staff'].includes(profile.role as string)) {
-      // They should access the dashboard, so don't redirect them away
-      navigate('/', { replace: true });
-    }
+    // For all other roles, show the dashboard (no redirect here to avoid loops)
+
   }, [profile?.role, navigate]);
 
   // If user is admin, don't render the dashboard at all
