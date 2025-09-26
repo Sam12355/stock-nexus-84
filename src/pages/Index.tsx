@@ -450,8 +450,7 @@ const Index = () => {
       }
 
       setSelectedDistrictOption(selectedOption);
-      // Close district selection and open branch selection
-      setShowDistrictSelection(false);
+      // Keep district selection visible to avoid modal flicker and enable branch selection below
       setShowBranchSelection(true);
     } catch (error) {
       console.error('Error fetching branches for district:', error);
