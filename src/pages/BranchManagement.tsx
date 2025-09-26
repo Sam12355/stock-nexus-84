@@ -178,7 +178,9 @@ export default function BranchManagement() {
         const { error } = await supabase
           .from('branches')
           .update(branchData)
-          .eq('id', editingBranch.id);
+          .eq('id', editingBranch.id)
+          .select()
+          .single();
 
         if (error) throw error;
         toast({
@@ -188,7 +190,9 @@ export default function BranchManagement() {
       } else {
         const { error } = await supabase
           .from('branches')
-          .insert([branchData]);
+          .insert([branchData])
+          .select()
+          .single();
 
         if (error) throw error;
         toast({
@@ -201,9 +205,10 @@ export default function BranchManagement() {
       fetchBranches();
     } catch (error) {
       console.error('Error saving branch:', error);
+      const message = (error as any)?.message || 'Failed to save branch';
       toast({
         title: "Error",
-        description: "Failed to save branch",
+        description: message,
         variant: "destructive"
       });
     }
@@ -295,7 +300,12 @@ export default function BranchManagement() {
         <h1 className="text-3xl font-bold">Branch Management</h1>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
+            <Button onClick={() => {
+              setFormData({ name: '', description: '', location: '', region_id: '', district_id: '' });
+              setEditingBranch(null);
+              setErrors({});
+              setIsModalOpen(true);
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Add Branch
             </Button>
