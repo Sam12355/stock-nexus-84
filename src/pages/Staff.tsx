@@ -132,11 +132,16 @@ const Staff = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // Admin sees ALL staff, others see only their branch staff
+      // Filter staff based on user role
       if (profile && (profile.role as string) !== 'admin') {
         const userBranchId = profile.branch_id || profile.branch_context;
         if (userBranchId && (profile.role === 'manager' || profile.role === 'assistant_manager')) {
           query = query.eq('branch_id', userBranchId);
+          
+          // Assistant managers should only see staff, not managers
+          if (profile.role === 'assistant_manager') {
+            query = query.eq('role', 'staff');
+          }
         }
       }
 

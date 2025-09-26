@@ -105,7 +105,7 @@ const Index = () => {
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    event_date: new Date() as Date | undefined,
+    event_date: '' as string,
     event_type: 'reorder'
   });
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
@@ -335,7 +335,7 @@ const Index = () => {
             body: {
               eventTitle: newEvent.title,
               eventDescription: newEvent.description,
-              eventDate: newEvent.event_date?.toISOString(),
+              eventDate: newEvent.event_date,
               eventType: newEvent.event_type,
               branchId: selectedBranchOption.value,
               reminderType: 'immediate'
@@ -358,7 +358,7 @@ const Index = () => {
       setNewEvent({
         title: '',
         description: '',
-        event_date: new Date(),
+        event_date: '',
         event_type: 'reorder'
       });
     } catch (error: any) {
@@ -934,11 +934,12 @@ const Index = () => {
               />
             </div>
             <div>
-              <Label htmlFor="event-date">Date & Time *</Label>
-              <DateTimePicker
-                value={newEvent.event_date}
-                onChange={(date) => setNewEvent({ ...newEvent, event_date: date })}
-                placeholder="Select date and time"
+              <Label htmlFor="event-date">Date *</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={newEvent.event_date ? new Date(newEvent.event_date).toISOString().split('T')[0] : ''}
+                onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
               />
             </div>
             <div>

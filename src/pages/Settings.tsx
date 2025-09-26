@@ -196,23 +196,26 @@ const Settings = () => {
   };
 
   // Save individual notification setting immediately
-  const saveNotificationSetting = async (settingType: 'email' | 'sms' | 'whatsapp', value: boolean) => {
+  const saveNotificationSetting = async (settingType: 'email' | 'sms' | 'whatsapp' | 'stockAlerts' | 'eventReminders', value: boolean) => {
     if (!branch) return;
 
     try {
-      const updatedSettings = {
-        ...branch.notification_settings,
-        [settingType]: value
-      };
+      // Only save to database for notification delivery methods, not preferences
+      if (['email', 'sms', 'whatsapp'].includes(settingType)) {
+        const updatedSettings = {
+          ...branch.notification_settings,
+          [settingType]: value
+        };
 
-      const { error } = await supabase
-        .from("branches")
-        .update({
-          notification_settings: updatedSettings
-        })
-        .eq("id", branch.id);
+        const { error } = await supabase
+          .from("branches")
+          .update({
+            notification_settings: updatedSettings
+          })
+          .eq("id", branch.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       console.log(`${settingType} notification setting saved:`, value);
     } catch (error) {
@@ -451,10 +454,11 @@ const Settings = () => {
                   </div>
                   <Switch
                     checked={notifications.stockAlerts}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={async (checked) => {
                       setHasTouchedNotifications(true);
                       hasTouchedNotificationsRef.current = true;
                       setNotifications((prev) => ({ ...prev, stockAlerts: checked }));
+                      await saveNotificationSetting('stockAlerts', checked);
                     }}
                   />
                 </div>
@@ -466,10 +470,11 @@ const Settings = () => {
                   </div>
                   <Switch
                     checked={notifications.eventReminders}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={async (checked) => {
                       setHasTouchedNotifications(true);
                       hasTouchedNotificationsRef.current = true;
                       setNotifications((prev) => ({ ...prev, eventReminders: checked }));
+                      await saveNotificationSetting('eventReminders', checked);
                     }}
                   />
                 </div>
@@ -542,6 +547,7 @@ const Settings = () => {
                     <Input
                       value={branch.name}
                       maxLength={120}
+                      disabled={profile?.role !== 'regional_manager' && profile?.role !== 'district_manager'}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
                         hasTouchedBranchRef.current = true;
@@ -555,6 +561,7 @@ const Settings = () => {
                     <Input
                       value={branch.location || ""}
                       maxLength={120}
+                      disabled={profile?.role !== 'regional_manager' && profile?.role !== 'district_manager'}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
                         hasTouchedBranchRef.current = true;
