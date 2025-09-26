@@ -14,6 +14,8 @@ interface Profile {
   role: 'regional_manager' | 'district_manager' | 'manager' | 'assistant_manager' | 'staff';
   branch_id?: string;
   branch_context?: string;
+  region_id?: string;
+  district_id?: string;
   last_access?: string;
   access_count: number;
   created_at: string;

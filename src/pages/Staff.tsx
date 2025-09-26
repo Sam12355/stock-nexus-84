@@ -69,9 +69,12 @@ const Staff = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
   const [districts, setDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
+  const [branches, setBranches] = useState<{ id: string; name: string; region_id: string; district_id: string }[]>([]);
   const [filteredDistricts, setFilteredDistricts] = useState<{ id: string; name: string; region_id: string }[]>([]);
+  const [filteredBranches, setFilteredBranches] = useState<{ id: string; name: string; region_id: string; district_id: string }[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>("");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   const roleOptions = [
     { value: 'regional_manager', label: 'Regional Manager' },
@@ -95,8 +98,9 @@ const Staff = () => {
 
   const regionOptions = regions.map(r => ({ value: r.id, label: r.name }));
   const districtOptions = filteredDistricts.map(d => ({ value: d.id, label: d.name }));
+  const branchOptions = filteredBranches.map(b => ({ value: b.id, label: b.name }));
 
-  // Filter districts based on selected region
+  // Filter districts and branches based on user role and selection
   useEffect(() => {
     if (selectedRegionId) {
       const regionDistricts = districts.filter(d => d.region_id === selectedRegionId);
@@ -105,11 +109,41 @@ const Staff = () => {
       if (selectedDistrictId && !regionDistricts.find(d => d.id === selectedDistrictId)) {
         setSelectedDistrictId('');
       }
+
+      // Filter branches based on user role
+      let regionBranches = branches.filter(b => b.region_id === selectedRegionId);
+      if (selectedDistrictId) {
+        regionBranches = regionBranches.filter(b => b.district_id === selectedDistrictId);
+      }
+      setFilteredBranches(regionBranches);
     } else {
       setFilteredDistricts([]);
+      setFilteredBranches([]);
       setSelectedDistrictId('');
+      setSelectedBranchId('');
     }
-  }, [selectedRegionId, districts, selectedDistrictId]);
+  }, [selectedRegionId, selectedDistrictId, districts, branches]);
+
+  // Filter branches based on user role when no region is selected
+  useEffect(() => {
+    const userRole = profile?.role as string;
+    
+    if (userRole === 'district_manager') {
+      // District manager can only assign branches in their district
+      const userDistrictId = profile?.district_id;
+      if (userDistrictId) {
+        const districtBranches = branches.filter(b => b.district_id === userDistrictId);
+        setFilteredBranches(districtBranches);
+      }
+    } else if (userRole === 'regional_manager') {
+      // Regional manager can assign branches in their region
+      const userRegionId = profile?.region_id;
+      if (userRegionId) {
+        const regionBranches = branches.filter(b => b.region_id === userRegionId);
+        setFilteredBranches(regionBranches);
+      }
+    }
+  }, [profile, branches]);
 
   const selectStyles: any = {
     container: (base: any) => ({ ...base, zIndex: 999999 }),
@@ -242,6 +276,7 @@ const Staff = () => {
             photo_url: formData.photo_url.trim() || null,
             region_id: selectedRegionId || null,
             district_id: selectedDistrictId || null,
+            branch_id: selectedBranchId || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', selectedStaff.id);
@@ -291,6 +326,7 @@ const Staff = () => {
             role: formData.role,
             region_id: selectedRegionId || null,
             district_id: selectedDistrictId || null,
+            branch_id: selectedBranchId || null,
             position: formData.position.trim() || null,
             phone: formData.phone.trim() || null,
             photo_url: formData.photo_url.trim() || null,
@@ -378,12 +414,16 @@ const Staff = () => {
     });
     setFormErrors({});
     setSelectedStaff(null);
+    setSelectedRegionId('');
+    setSelectedDistrictId('');
+    setSelectedBranchId('');
   };
 
   const openEditModal = (staff: StaffMember) => {
     setSelectedStaff(staff);
     setSelectedRegionId(staff.region_id || "");
     setSelectedDistrictId(staff.district_id || "");
+    setSelectedBranchId(staff.branch_id || "");
     setFormData({
       name: staff.name,
       email: staff.email,
@@ -411,6 +451,7 @@ const Staff = () => {
       fetchStaffMembers();
       fetchRegions();
       fetchDistricts();
+      fetchBranches();
     }
   }, [canManageStaff, profile?.role]);
 
@@ -439,6 +480,20 @@ const Staff = () => {
       setDistricts(data || []);
     } catch (error) {
       console.error('Error fetching districts:', error);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name, region_id, district_id')
+        .order('name');
+      
+      if (error) throw error;
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
     }
   };
 
@@ -618,6 +673,25 @@ const Staff = () => {
                         menuShouldBlockScroll
                         placeholder="Select district"
                         isDisabled={!selectedRegionId}
+                      />
+                    </div>
+                  )}
+
+                  {/* Branch selection for manager and assistant_manager roles */}
+                  {(formData.role === 'manager' || formData.role === 'assistant_manager') && (
+                    <div>
+                      <Label htmlFor="branch">Branch *</Label>
+                      <ReactSelect
+                        inputId="branch"
+                        classNamePrefix="rs"
+                        options={branchOptions}
+                        value={branchOptions.find(o => o.value === selectedBranchId) || null}
+                        onChange={(opt) => setSelectedBranchId((opt as any)?.value || '')}
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll
+                        placeholder="Select branch"
                       />
                     </div>
                   )}
@@ -937,6 +1011,22 @@ const Staff = () => {
                       isDisabled={!selectedRegionId}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Branch selection for manager and assistant_manager roles in edit modal */}
+              {(formData.role === 'manager' || formData.role === 'assistant_manager') && (
+                <div>
+                  <Label htmlFor="edit-branch">Branch *</Label>
+                  <ReactSelect
+                    id="edit-branch"
+                    options={branchOptions}
+                    value={branchOptions.find(option => option.value === selectedBranchId) || null}
+                    onChange={(option) => setSelectedBranchId(option?.value || "")}
+                    placeholder="Select a branch..."
+                    menuPortalTarget={document.body}
+                    styles={selectStyles}
+                  />
                 </div>
               )}
 
