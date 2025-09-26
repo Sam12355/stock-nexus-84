@@ -984,63 +984,28 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="mt-2">
-                  <Select2
-                    options={(() => {
-                      const opts = (filteredBranches.length > 0 ? filteredBranches : branches).map(branch => ({
-                        value: branch.id,
-                        label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
-                      }));
-                      console.log('Select2 options for branches:', opts);
-                      return opts;
-                    })()}
-                    onChange={handleBranchSelection}
-                    placeholder="Select a branch..."
-                    isClearable={false}
-                    isSearchable={true}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    isDisabled={showDistrictSelection && !selectedDistrictOption}
-                    key={`branches-${selectedDistrictOption?.value || 'none'}`}
-                    styles={{
-                      control: (provided) => ({
-                        ...provided,
-                        backgroundColor: 'hsl(var(--background))',
-                        borderColor: 'hsl(var(--border))',
-                        color: 'hsl(var(--foreground))',
-                        minHeight: '44px',
-                        fontSize: '14px'
-                      }),
-                      menu: (provided) => ({
-                        ...provided,
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        zIndex: 9999
-                      }),
-                      option: (provided, state) => ({
-                        ...provided,
-                        backgroundColor: state.isSelected 
-                          ? 'hsl(var(--accent))' 
-                          : state.isFocused 
-                          ? 'hsl(var(--accent) / 0.5)' 
-                          : 'transparent',
-                        color: 'hsl(var(--popover-foreground))',
-                        padding: '12px 16px'
-                      }),
-                      singleValue: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--foreground))'
-                      }),
-                      placeholder: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--muted-foreground))'
-                      }),
-                      input: (provided) => ({
-                        ...provided,
-                        color: 'hsl(var(--foreground))'
-                      })
-                    }}
-                  />
+                  { (showDistrictSelection && !selectedDistrictOption) ? (
+                    <div className="text-sm text-muted-foreground">Select a district to see branches</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(filteredBranches.length > 0 ? filteredBranches : branches).map((branch: any) => (
+                        <button
+                          key={branch.id}
+                          type="button"
+                          onClick={() => handleBranchSelection({
+                            value: branch.id,
+                            label: `${branch.name}${branch.location ? ` - ${branch.location}` : ''}`
+                          })}
+                          className="w-full rounded-lg border bg-card text-card-foreground hover:bg-accent transition-colors p-3 text-left"
+                        >
+                          <div className="font-medium">{branch.name}</div>
+                          {branch.location && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{branch.location}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
