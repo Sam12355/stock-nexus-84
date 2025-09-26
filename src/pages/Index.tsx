@@ -505,9 +505,11 @@ const Index = () => {
       console.log('Profile loaded:', extendedProfile);
       
       if ((extendedProfile.role as string) === 'regional_manager') {
-        // Regional managers: Always show district selection to choose from their districts
-        setShowDistrictSelection(true);
-        fetchDistrictsData();
+        // Regional managers: Only show district selection if they don't have branch_context
+        if (!extendedProfile.branch_context) {
+          setShowDistrictSelection(true);
+          fetchDistrictsData();
+        }
       } else if ((extendedProfile.role as string) === 'district_manager') {
         // District managers: show branch selection popup  
         if (!extendedProfile.branch_context) {
