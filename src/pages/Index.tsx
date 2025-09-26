@@ -117,7 +117,7 @@ const Index = () => {
 
   const fetchBranchesData = async () => {
     try {
-      if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
+      if ((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') {
         const { data: branchesData, error: branchesError } = await supabase
           .from('branches')
           .select('id, name, location')
@@ -139,7 +139,7 @@ const Index = () => {
   const fetchDashboardData = async () => {
     try {
       // Check if Regional/District Manager needs to select branch context first
-      if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
+      if ((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') {
         await fetchBranchesData();
         setShowBranchSelection(true);
         setLoading(false);
@@ -166,9 +166,9 @@ const Index = () => {
       let filteredStock = stockData || [];
       const userBranchContext = extendedProfile?.branch_context || extendedProfile?.branch_id;
       
-      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+      if ((extendedProfile?.role as string) !== 'regional_manager' && (extendedProfile?.role as string) !== 'district_manager' && userBranchContext) {
         filteredStock = stockData?.filter(item => item.items.branch_id === userBranchContext) || [];
-      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+      } else if (((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') && extendedProfile?.branch_context) {
         filteredStock = stockData?.filter(item => item.items.branch_id === extendedProfile.branch_context) || [];
       }
 
@@ -184,9 +184,9 @@ const Index = () => {
 
       // Fetch staff count
       let staffQuery = supabase.from('profiles').select('*', { count: 'exact' });
-      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+      if (((extendedProfile?.role as string) !== 'regional_manager' && (extendedProfile?.role as string) !== 'district_manager') && userBranchContext) {
         staffQuery = staffQuery.eq('branch_id', userBranchContext);
-      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+      } else if (((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') && extendedProfile?.branch_context) {
         staffQuery = staffQuery.eq('branch_id', extendedProfile.branch_context);
       }
       
@@ -205,9 +205,9 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+      if (((extendedProfile?.role as string) !== 'regional_manager' && (extendedProfile?.role as string) !== 'district_manager') && userBranchContext) {
         activityQuery = activityQuery.eq('branch_id', userBranchContext);
-      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+      } else if (((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') && extendedProfile?.branch_context) {
         activityQuery = activityQuery.eq('branch_id', extendedProfile.branch_context);
       }
 
@@ -222,9 +222,9 @@ const Index = () => {
         .order('event_date', { ascending: true })
         .limit(5);
 
-      if ((extendedProfile?.role !== 'regional_manager' && extendedProfile?.role !== 'district_manager') && userBranchContext) {
+      if (((extendedProfile?.role as string) !== 'regional_manager' && (extendedProfile?.role as string) !== 'district_manager') && userBranchContext) {
         eventsQuery = eventsQuery.eq('branch_id', userBranchContext);
-      } else if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && extendedProfile?.branch_context) {
+      } else if (((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') && extendedProfile?.branch_context) {
         eventsQuery = eventsQuery.eq('branch_id', extendedProfile.branch_context);
       }
 
@@ -288,7 +288,7 @@ const Index = () => {
 
     // Determine branch ID based on user role
     let branchId: string | null = null;
-    if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
+    if ((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') {
       if (!selectedBranchOption?.value && !extendedProfile?.branch_context) {
         toast({
           title: "Branch is required",
@@ -582,7 +582,7 @@ const Index = () => {
               <CardTitle>Calendar & Events</CardTitle>
               <CardDescription>Upcoming events and reminders</CardDescription>
             </div>
-            {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager' || extendedProfile?.role === 'manager' || extendedProfile?.role === 'assistant_manager') && (
+            {((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager' || (extendedProfile?.role as string) === 'manager' || (extendedProfile?.role as string) === 'assistant_manager') && (
               <Button onClick={() => {
                 console.log('Add Event button clicked, current showEventModal:', showEventModal);
                 setShowEventModal(true);
@@ -859,7 +859,7 @@ const Index = () => {
             <DialogTitle>Add New Event</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {(extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context && (
+            {((extendedProfile?.role as string) === 'regional_manager' || (extendedProfile?.role as string) === 'district_manager') && !extendedProfile?.branch_context && (
               <div>
                 <Label htmlFor="event-branch">Branch *</Label>
                 <Select2
