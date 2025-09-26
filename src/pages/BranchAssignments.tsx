@@ -34,6 +34,7 @@ interface Branch {
 interface Region {
   id: string;
   name: string;
+  regional_manager_id?: string;
 }
 
 interface District {
@@ -77,7 +78,7 @@ const BranchAssignments = () => {
       // Fetch regions
       const { data: regionsData, error: regionsError } = await supabase
         .from('regions')
-        .select('id, name')
+        .select('id, name, regional_manager_id')
         .order('name');
 
       if (regionsError) throw regionsError;
@@ -196,7 +197,15 @@ const BranchAssignments = () => {
     if (!selectedManager) return [];
 
     if (selectedManager.role === 'regional_manager') {
-      return branches.filter(branch => branch.region_id === selectedManager.region_id);
+      // Find region where this manager is assigned as regional manager
+      const managerRegion = regions.find(region => region.regional_manager_id === selectedManager.id);
+      if (managerRegion) {
+        return branches.filter(branch => branch.region_id === managerRegion.id);
+      }
+      // Fallback: if region_id is set directly on the manager profile
+      if (selectedManager.region_id) {
+        return branches.filter(branch => branch.region_id === selectedManager.region_id);
+      }
     } else if (selectedManager.role === 'district_manager') {
       return branches.filter(branch => branch.district_id === selectedManager.district_id);
     }
