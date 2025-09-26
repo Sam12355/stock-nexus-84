@@ -139,7 +139,7 @@ const Index = () => {
   const fetchDashboardData = async () => {
     try {
       // Check if Regional/District Manager needs to select branch context first
-      if ((extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') && !extendedProfile?.branch_context) {
+      if (extendedProfile?.role === 'regional_manager' || extendedProfile?.role === 'district_manager') {
         await fetchBranchesData();
         setShowBranchSelection(true);
         setLoading(false);
