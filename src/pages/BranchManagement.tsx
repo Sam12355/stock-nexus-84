@@ -266,8 +266,8 @@ export default function BranchManagement() {
     branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     branch.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     branch.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    branch.region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    branch.district.name.toLowerCase().includes(searchTerm.toLowerCase())
+    branch.region?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    branch.district?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if ((profile?.role as string) !== 'admin') {
@@ -420,8 +420,8 @@ export default function BranchManagement() {
             {filteredBranches.map((branch) => (
               <TableRow key={branch.id}>
                 <TableCell className="font-medium">{branch.name}</TableCell>
-                <TableCell>{branch.region.name}</TableCell>
-                <TableCell>{branch.district.name}</TableCell>
+                <TableCell>{branch.region?.name || 'No Region'}</TableCell>
+                <TableCell>{branch.district?.name || 'No District'}</TableCell>
                 <TableCell>{branch.location || '-'}</TableCell>
                 <TableCell>{branch.description || '-'}</TableCell>
                 <TableCell>{new Date(branch.created_at).toLocaleDateString()}</TableCell>
