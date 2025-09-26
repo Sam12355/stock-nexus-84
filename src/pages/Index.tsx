@@ -870,7 +870,7 @@ const Index = () => {
                       onChange={(selectedDistrict) => {
                         if (selectedDistrict) {
                           // Set selected district and fetch related branches
-                          setSelectedDistrictId(selectedDistrict.value);
+                          setSelectedDistrictOption(selectedDistrict);
                           
                           // Filter branches by district
                           const districtBranches = branches.filter(branch => 
@@ -949,7 +949,7 @@ const Index = () => {
                     isSearchable={true}
                     className="react-select-container"
                     classNamePrefix="react-select"
-                    isDisabled={showDistrictSelection && !selectedDistrictId}
+                    isDisabled={showDistrictSelection && !selectedDistrictOption}
                     styles={{
                       control: (provided) => ({
                         ...provided,
