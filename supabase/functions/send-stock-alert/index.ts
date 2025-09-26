@@ -20,6 +20,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Get Twilio credentials
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'; // Twilio Sandbox number
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -102,34 +107,69 @@ Time: ${new Date().toLocaleString()}`;
 
     const notifications = [];
 
-    // Send WhatsApp notifications to eligible users
+    // Send WhatsApp notifications to eligible users via Twilio
     for (const user of eligibleUsers || []) {
-      if (!user.phone) continue;
+      if (!user.phone || !TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) continue;
 
       try {
-        const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp-notification', {
-          body: {
-            phoneNumber: user.phone,
-            message: message,
-            type: 'stock_alert',
-            itemName: itemName,
-            currentQuantity: currentQuantity,
-            thresholdLevel: thresholdLevel
-          }
+        // Format phone number for WhatsApp
+        const formattedPhoneNumber = user.phone.startsWith('whatsapp:') 
+          ? user.phone 
+          : `whatsapp:${user.phone}`;
+
+        // Prepare Twilio API request
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+        
+        const formData = new URLSearchParams();
+        formData.append('From', TWILIO_WHATSAPP_FROM);
+        formData.append('To', formattedPhoneNumber);
+        formData.append('Body', message);
+
+        // Create authorization header
+        const credentials = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+        
+        console.log(`Sending WhatsApp to ${user.name} (${user.phone})`);
+
+        // Send message via Twilio
+        const twilioResponse = await fetch(twilioUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData.toString(),
         });
 
-        if (whatsappError) {
-          console.error('WhatsApp notification failed for user:', user.name, whatsappError);
-        } else {
-          console.log('WhatsApp notification sent to:', user.name);
+        const twilioResult = await twilioResponse.json();
+        
+        if (twilioResponse.ok) {
+          console.log(`WhatsApp sent successfully to ${user.name}:`, twilioResult.sid);
           notifications.push({
             user: user.name,
             phone: user.phone,
-            status: 'sent'
+            status: 'sent',
+            messageSid: twilioResult.sid
           });
+
+          // Log the notification to the database
+          try {
+            await supabase.from('notifications').insert({
+              type: 'whatsapp',
+              recipient: user.phone,
+              subject: `${alertType} Stock Alert`,
+              message: message,
+              status: 'sent',
+              branch_id: branchId,
+              sent_at: new Date().toISOString()
+            });
+          } catch (dbError) {
+            console.error('Error logging notification to DB:', dbError);
+          }
+        } else {
+          console.error(`WhatsApp failed for ${user.name}:`, twilioResult);
         }
       } catch (error) {
-        console.error('Error sending WhatsApp to user:', user.name, error);
+        console.error(`Error sending WhatsApp to ${user.name}:`, error);
       }
     }
 
