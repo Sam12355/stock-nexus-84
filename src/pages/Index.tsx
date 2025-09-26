@@ -432,19 +432,24 @@ const Index = () => {
 
   const handleDistrictSelection = async (selectedOption: {value: string, label: string} | null) => {
     if (!selectedOption) return;
-    
     try {
-      // Fetch branches in the selected district
-      const { data: branchesData, error: branchesError } = await supabase
-        .from('branches')
-        .select('id, name, location, district_id')
-        .eq('district_id', selectedOption.value)
-        .order('name');
-      
-      if (branchesError) throw branchesError;
-      setFilteredBranches(branchesData || []);
+      // Prefer client-side filter from already loaded region branches for snappy UX
+      if (branches && branches.length > 0) {
+        const districtBranches = branches.filter(b => b.district_id === selectedOption.value);
+        setFilteredBranches(districtBranches);
+      } else {
+        // Fallback: fetch from backend if branches not loaded yet
+        const { data: branchesData, error: branchesError } = await supabase
+          .from('branches')
+          .select('id, name, location, district_id')
+          .eq('district_id', selectedOption.value)
+          .order('name');
+        if (branchesError) throw branchesError;
+        setFilteredBranches(branchesData || []);
+        setBranches(prev => prev && prev.length ? prev : (branchesData || []));
+      }
+
       setSelectedDistrictOption(selectedOption);
-      
       // Close district selection and open branch selection
       setShowDistrictSelection(false);
       setShowBranchSelection(true);
