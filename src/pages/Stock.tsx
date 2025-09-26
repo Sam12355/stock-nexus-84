@@ -153,86 +153,30 @@ const Stock = () => {
       alertType = 'low';
     }
 
-    if (alertType && profile?.phone) {
+    if (alertType) {
       try {
-        // Check if WhatsApp notifications are enabled for the branch
-        const branchId = profile.branch_id || profile.branch_context;
-        if (!branchId) {
-          console.log('No branch ID found, skipping stock alert');
-          return;
-        }
-
-        const { data: branchData, error: branchError } = await supabase
-          .from('branches')
-          .select('notification_settings')
-          .eq('id', branchId)
-          .single();
-
-        // Determine if WhatsApp alerts are enabled: branch OR user local preference
-        let localWhatsapp = false;
-        try {
-          const saved = localStorage.getItem(`notifications_${profile?.id}`);
-          if (saved) localWhatsapp = !!JSON.parse(saved)?.whatsapp;
-        } catch (e) {
-          console.warn('Failed to read local notification prefs:', e);
-        }
-        const whatsappEnabled = (!!branchData?.notification_settings?.whatsapp) || localWhatsapp;
-
-        if (branchError || !whatsappEnabled) {
-          console.log('WhatsApp notifications disabled (branch+local):', {
-            branch: !!branchData?.notification_settings?.whatsapp,
-            local: localWhatsapp
-          });
-          return;
-        }
-
-        // Prepare WhatsApp message (same format as the edge function)
-        const urgencyText = alertType === 'critical' ? '🚨 CRITICAL' : '⚠️ LOW STOCK';
-        const message = `${urgencyText} ALERT
-
-📦 Item: ${item.items.name}
-📊 Current: ${newQuantity} units
-📋 Threshold: ${threshold} units
-
-${alertType === 'critical' 
-  ? '⚡ URGENT: Immediate restocking required!' 
-  : '📈 Action needed: Please consider restocking soon.'
-}
-
-Time: ${new Date().toLocaleString()}
-
-_Sent by_
-_Sushi Yama Inventory System_`;
-
-        console.log('Sending stock alert via WhatsApp:', {
-          itemName: item.items.name,
-          currentQuantity: newQuantity,
-          thresholdLevel: threshold,
-          alertType,
-          userPhone: profile.phone,
-          branchWhatsAppEnabled: branchData?.notification_settings?.whatsapp
-        });
-
-        // Use the same direct method that works in Settings
-        const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
+        // Use the send-stock-alert edge function to handle sending to all eligible users
+        const { data, error } = await supabase.functions.invoke('send-stock-alert', {
           body: {
-            phoneNumber: profile.phone,
-            message: message,
-            type: 'whatsapp'
+            itemName: item.items.name,
+            currentQuantity: newQuantity,
+            thresholdLevel: threshold,
+            alertType: alertType,
+            branchId: item.items.branch_id
           }
         });
 
         if (error) {
-          console.error('Stock alert WhatsApp failed:', error);
+          console.error('Stock alert failed:', error);
         } else {
-          console.log('Stock alert WhatsApp sent successfully:', data);
+          console.log('Stock alert sent successfully:', data);
           toast({
             title: "Stock Alert Sent",
-            description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent via WhatsApp`,
+            description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent to all eligible users`,
           });
         }
       } catch (error) {
-        console.error('Error sending stock alert WhatsApp:', error);
+        console.error('Error sending stock alert:', error);
       }
     }
   };

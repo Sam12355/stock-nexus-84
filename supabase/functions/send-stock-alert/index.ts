@@ -46,22 +46,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Branch not found');
     }
 
-    // Check if WhatsApp notifications are enabled for this branch
-    if (!branch.notification_settings?.whatsapp) {
-      console.log('WhatsApp notifications disabled for this branch');
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'WhatsApp notifications disabled for this branch' 
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
     // Get users in the branch who should receive stock alerts
+    // Include users from the branch AND regional/district managers
     const { data: users, error: usersError } = await supabase
       .from('profiles')
-      .select('phone, name, role')
+      .select('phone, name, role, notification_settings')
       .or(`branch_id.eq.${branchId},role.in.(regional_manager,district_manager)`)
       .not('phone', 'is', null);
 
@@ -71,6 +60,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('Found users for notification:', users?.length || 0);
+
+    // Filter users who have both WhatsApp and Stock Level Alerts enabled
+    const eligibleUsers = users?.filter(user => {
+      const userSettings = user.notification_settings || {};
+      const branchWhatsappEnabled = branch.notification_settings?.whatsapp;
+      const userWhatsappEnabled = userSettings.whatsapp;
+      const stockAlertsEnabled = userSettings.stockLevelAlerts;
+      
+      // User needs both WhatsApp (branch OR user level) AND Stock Level Alerts enabled
+      const whatsappOk = branchWhatsappEnabled || userWhatsappEnabled;
+      const eligibleForAlert = whatsappOk && stockAlertsEnabled;
+      
+      console.log(`User ${user.name} eligibility:`, {
+        branchWhatsapp: branchWhatsappEnabled,
+        userWhatsapp: userWhatsappEnabled,
+        stockAlerts: stockAlertsEnabled,
+        eligible: eligibleForAlert
+      });
+      
+      return eligibleForAlert;
+    }) || [];
+
+    console.log('Eligible users for stock alerts:', eligibleUsers.length);
 
     // Prepare WhatsApp message
     const urgencyText = alertType === 'critical' ? '🚨 CRITICAL' : '⚠️ LOW STOCK';
@@ -91,7 +103,7 @@ Time: ${new Date().toLocaleString()}`;
     const notifications = [];
 
     // Send WhatsApp notifications to eligible users
-    for (const user of users || []) {
+    for (const user of eligibleUsers || []) {
       if (!user.phone) continue;
 
       try {
