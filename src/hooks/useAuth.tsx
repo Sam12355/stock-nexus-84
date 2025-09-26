@@ -52,23 +52,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .single();
 
+      if (error) throw error;
+
       // Update access tracking once per day per user
       if (data) {
         const trackKey = `access-tracked:${user.id}:${new Date().toDateString()}`;
         if (!localStorage.getItem(trackKey)) {
-          await supabase
+          const { data: updatedData, error: updateError } = await supabase
             .from('profiles')
             .update({ 
               last_access: new Date().toISOString(),
               access_count: (data.access_count || 0) + 1 
             })
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .select()
+            .single();
+          
           localStorage.setItem(trackKey, '1');
+          
+          // Use updated data with incremented access_count
+          if (!updateError && updatedData) {
+            console.log('Profile updated with access tracking:', updatedData);
+            setProfile(updatedData);
+            return;
+          }
         }
       }
 
       console.log('Profile query result:', { data, error });
-      if (error) throw error;
       setProfile(data);
         
     } catch (error: any) {

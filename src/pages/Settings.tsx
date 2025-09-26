@@ -65,13 +65,23 @@ const Settings = () => {
     position: profile?.position || "",
   });
 
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    whatsapp: false,
-    stockAlerts: true,
-    eventReminders: true,
+  // Notification settings - initialize from localStorage or defaults
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem(`notifications_${profile?.id}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved notifications:', e);
+      }
+    }
+    return {
+      email: true,
+      sms: false,
+      whatsapp: false,
+      stockAlerts: true,
+      eventReminders: true,
+    };
   });
 
   // Branch settings
@@ -109,9 +119,10 @@ const Settings = () => {
       if (error) throw error;
 
       if (data) {
-        if (!hasTouchedBranchRef.current) {
-          setBranch(data as Branch);
-        }
+        // Always update branch data
+        setBranch(data as Branch);
+        
+        // Only initialize notifications if they haven't been touched by user
         if (!hasTouchedNotificationsRef.current) {
           setNotifications((prev) => ({
             ...prev,
@@ -120,6 +131,8 @@ const Settings = () => {
             whatsapp: data.notification_settings?.whatsapp ?? false,
           }));
         }
+        
+        // Always update branch settings
         setBranchSettings({
           alertFrequency: data.alert_frequency || "weekly",
         });
@@ -197,11 +210,13 @@ const Settings = () => {
 
   // Save individual notification setting immediately
   const saveNotificationSetting = async (settingType: 'email' | 'sms' | 'whatsapp' | 'stockAlerts' | 'eventReminders', value: boolean) => {
-    if (!branch) return;
-
     try {
-      // Only save to database for notification delivery methods, not preferences
-      if (['email', 'sms', 'whatsapp'].includes(settingType)) {
+      // Save to localStorage for all notification preferences
+      const updatedNotifications = { ...notifications, [settingType]: value };
+      localStorage.setItem(`notifications_${profile?.id}`, JSON.stringify(updatedNotifications));
+
+      // Only save to database for notification delivery methods, not user preferences
+      if (['email', 'sms', 'whatsapp'].includes(settingType) && branch) {
         const updatedSettings = {
           ...branch.notification_settings,
           [settingType]: value
