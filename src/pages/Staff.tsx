@@ -42,7 +42,8 @@ const staffSchema = z.object({
     required_error: "Role is required"
   }),
   photo_url: z.string().url().optional().or(z.literal("")),
-  password: z.string().min(6, "Password must be at least 6 characters").optional()
+  // Allow empty string to keep current password during edits
+  password: z.union([z.literal(""), z.string().min(6, "Password must be at least 6 characters")])
 });
 
 const Staff = () => {
@@ -205,6 +206,16 @@ const Staff = () => {
           .eq('id', selectedStaff.id);
 
         if (error) throw error;
+
+        // Optionally update password if provided (>= 6 chars)
+        if (formData.password && formData.password.length >= 6) {
+          const { data: updData, error: updErr } = await supabase.functions.invoke('admin-update-user', {
+            body: { user_id: selectedStaff.user_id, password: formData.password }
+          });
+          if (updErr || !updData?.success) {
+            throw new Error(updErr?.message || updData?.error || 'Failed to update password');
+          }
+        }
 
         // Log activity
         try {
@@ -793,6 +804,22 @@ const Staff = () => {
                   menuShouldBlockScroll
                   placeholder="Select branch"
                 />
+              </div>
+            )}
+
+            {/* Password field for edit - masked, optional */}
+            {profile?.role !== 'staff' && (
+              <div>
+                <Label htmlFor="edit-password">Password</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="******** (leave blank to keep current)"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Leave empty to keep current password.</p>
+                {formErrors.password && <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>}
               </div>
             )}
 
