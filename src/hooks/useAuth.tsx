@@ -86,11 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
     } catch (error: any) {
       console.error('Error fetching profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load user profile",
-        variant: "destructive",
-      });
+      // Only show error toast if user is still authenticated
+      if (user) {
+        toast({
+          title: "Error",
+          description: "Failed to load user profile",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -178,10 +181,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         // Clear branch_context before signing out
-        await supabase
-          .from('profiles')
-          .update({ branch_context: null })
-          .eq('user_id', user.id);
+        try {
+          await supabase
+            .from('profiles')
+            .update({ branch_context: null })
+            .eq('user_id', user.id);
+        } catch (updateError) {
+          console.warn('Failed to update branch context:', updateError);
+        }
       }
       
       await supabase.auth.signOut();
@@ -195,11 +202,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } catch (error: any) {
       console.error('Error signing out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
+      // Only show error toast for actual sign-out failures, not profile update failures
+      if (error.message && !error.message.includes('profile')) {
+        toast({
+          title: "Error",
+          description: "Failed to sign out",
+          variant: "destructive",
+        });
+      }
     }
   };
 
