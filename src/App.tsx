@@ -20,7 +20,7 @@ import ActivityLogs from "./pages/ActivityLogs";
 import RegionManagement from "./pages/RegionManagement";
 import DistrictManagement from "./pages/DistrictManagement";
 import BranchManagement from "./pages/BranchManagement";
-import BranchAssignments from "./pages/BranchAssignments";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,7 +39,7 @@ const App = () => (
               <Route path="/regions" element={<DashboardLayout><RegionManagement /></DashboardLayout>} />
               <Route path="/districts" element={<DashboardLayout><DistrictManagement /></DashboardLayout>} />
               <Route path="/branches" element={<DashboardLayout><BranchManagement /></DashboardLayout>} />
-              <Route path="/branch-assignments" element={<DashboardLayout><AdminAuth><BranchAssignments /></AdminAuth></DashboardLayout>} />
+              
               <Route path="/items" element={<DashboardLayout><Items /></DashboardLayout>} />
               <Route path="/stock" element={<DashboardLayout><Stock /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
