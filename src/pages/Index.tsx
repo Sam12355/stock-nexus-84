@@ -334,7 +334,7 @@ const Index = () => {
       });
 
       if (error) throw error;
-      setWeather(data);
+      setWeather({ ...data, city });
     } catch (error) {
       console.error('Error fetching weather:', error);
     } finally {
@@ -777,7 +777,7 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Cloud className="h-5 w-5" />
-                Weather in Vaxjo
+                {weather?.city ? `Weather in ${weather.city}` : 'Weather'}
               </CardTitle>
             </CardHeader>
             <CardContent>

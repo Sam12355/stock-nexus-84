@@ -642,9 +642,7 @@ const Settings = () => {
 
         {/* Branch Settings */}
         {(profile.role === "manager" ||
-          profile.role === "assistant_manager" ||
-          profile.role === "regional_manager" ||
-          profile.role === "district_manager") && (
+          profile.role === "assistant_manager") && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -660,7 +658,7 @@ const Settings = () => {
                     <Input
                       value={branch.name}
                       maxLength={120}
-                      disabled={profile?.role !== 'regional_manager' && profile?.role !== 'district_manager'}
+                      disabled={true}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
                         hasTouchedBranchRef.current = true;
@@ -674,7 +672,7 @@ const Settings = () => {
                     <Input
                       value={branch.location || ""}
                       maxLength={120}
-                      disabled={profile?.role !== 'regional_manager' && profile?.role !== 'district_manager'}
+                      disabled={true}
                       onChange={(e) => {
                         setHasTouchedBranch(true);
                         hasTouchedBranchRef.current = true;
