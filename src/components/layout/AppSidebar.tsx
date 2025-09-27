@@ -59,7 +59,7 @@ const menuItems = [
     title: "Branch Assignments",
     url: "/branch-assignments",
     icon: MapPin,
-    roles: ['admin', 'district_manager']
+    roles: ['admin']
   },
   {
     title: "Manage Staff",

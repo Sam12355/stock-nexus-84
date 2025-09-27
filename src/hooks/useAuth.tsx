@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const suppressToastsRef = useRef(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error('Error fetching profile:', error);
       // Only show error toast if user is still authenticated
-      if (user) {
+      if (session?.user && !suppressToastsRef.current) {
         toast({
           title: "Error",
           description: "Failed to load user profile",
@@ -169,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      suppressToastsRef.current = true;
       // Log logout activity before signing out
       if (user?.id) {
         try {
@@ -200,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Signed out",
         description: "You have been successfully signed out",
       });
+      setTimeout(() => { suppressToastsRef.current = false; }, 300);
     } catch (error: any) {
       console.error('Error signing out:', error);
       // Only show error toast for actual sign-out failures, not profile update failures

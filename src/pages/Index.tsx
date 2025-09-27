@@ -310,8 +310,24 @@ const Index = () => {
 
   const fetchWeatherData = async () => {
     try {
-      // Get branch location - for now using Vaxjo as default
-      const city = "Vaxjo"; // Can be made dynamic based on branch
+      // Determine city from the selected/assigned branch location
+      let city = '';
+      const branchId = extendedProfile?.branch_context || extendedProfile?.branch_id || null;
+
+      if (branchId) {
+        const { data: branch, error: branchError } = await supabase
+          .from('branches')
+          .select('location')
+          .eq('id', branchId)
+          .maybeSingle();
+        if (branchError) throw branchError;
+        city = branch?.location || '';
+      }
+
+      if (!city) {
+        // No branch/location available yet
+        return;
+      }
       
       const { data, error } = await supabase.functions.invoke('get-weather', {
         body: { city }
