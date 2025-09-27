@@ -491,9 +491,22 @@ const Settings = () => {
 
     setTestMessageLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-event-alerts', {
+      // Send immediate alert message
+      const alertMessage = `🚨 ALERT SYSTEM ACTIVATED!
+
+📱 Your WhatsApp alert system is now active.
+⏰ You will receive automated alerts every 5 minutes.
+🏪 Branch: ${branch?.name || 'Your Branch'}
+
+This is your first alert. The next one will arrive in 5 minutes.
+
+Activated: ${new Date().toLocaleString()}`;
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
         body: {
-          trigger: "manual_activation"
+          phoneNumber: profileData.phone,
+          message: alertMessage,
+          type: 'whatsapp'
         }
       });
 
@@ -508,7 +521,7 @@ const Settings = () => {
         console.log('Alert system activated:', data);
         toast({
           title: "Success",
-          description: "Alert system activated! You will receive WhatsApp alerts every 5 minutes.",
+          description: "Alert system activated! First alert sent, automated alerts will follow every 5 minutes.",
         });
       }
     } catch (error) {
