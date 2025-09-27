@@ -144,46 +144,41 @@ const Stock = () => {
   };
 
   const checkAndSendStockAlert = async (item: StockItem, newQuantity: number) => {
-  const threshold = item.items.threshold_level;
-  let alertType: 'low' | 'critical' | null = null;
+    const threshold = item.items.threshold_level;
+    let alertType: 'low' | 'critical' | null = null;
 
-  if (newQuantity <= threshold * 0.5) {
-    alertType = 'critical';
-  } else if (newQuantity <= threshold) {
-    alertType = 'low';
-  }
-
-  if (alertType) {
-    try {
-      const { data, error } = await supabase.functions.invoke('send-stock-alert', {
-        body: {
-          itemName: item.items.name,
-          currentQuantity: newQuantity,
-          thresholdLevel: threshold,
-          alertType: alertType,
-          branchId: item.items.branch_id,
-        },
-      });
-
-      if (error) {
-        console.error('Stock alert failed:', error);
-        alert(`Twilio Error: ${error.message || JSON.stringify(error)}`);
-      } else if (data?.error) {
-        // if edge function returned an error JSON
-        alert(`Twilio Error: ${data.error}`);
-      } else {
-        console.log('Stock alert sent successfully:', data);
-        toast({
-          title: "Stock Alert Sent",
-          description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent`,
-        });
-      }
-    } catch (err: any) {
-      console.error('Error sending stock alert:', err);
-      alert(`Twilio Error: ${err.message}`);
+    if (newQuantity <= threshold * 0.5) {
+      alertType = 'critical';
+    } else if (newQuantity <= threshold) {
+      alertType = 'low';
     }
-  }
-};
+
+    if (alertType) {
+      try {
+        // Use the send-stock-alert edge function to handle sending to all eligible users
+        const { data, error } = await supabase.functions.invoke('send-stock-alert', {
+          body: {
+            itemName: item.items.name,
+            currentQuantity: newQuantity,
+            thresholdLevel: threshold,
+            alertType: alertType,
+            branchId: item.items.branch_id
+          }
+        });
+
+        if (error) {
+          console.error('Stock alert failed:', error);
+        } else {
+          console.log('Stock alert sent successfully:', data);
+          toast({
+            title: "Stock Alert Sent",
+            description: `${alertType === 'critical' ? 'Critical' : 'Low'} stock notification sent to all eligible users`,
+          });
+        }
+      } catch (error) {
+        console.error('Error sending stock alert:', error);
+      }
+    }
   };
 
   const handleQuickStockAction = async (item: StockItem, action: 'in' | 'out') => {
