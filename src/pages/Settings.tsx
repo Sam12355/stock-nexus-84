@@ -478,6 +478,51 @@ const Settings = () => {
     }
   };
 
+  // Activate alert system
+  const activateAlert = async () => {
+    if (!profileData.phone || profileData.phone.trim() === "") {
+      toast({
+        title: "Error",
+        description: "Please add a phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestMessageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-event-alerts', {
+        body: {
+          trigger: "manual_activation"
+        }
+      });
+
+      if (error) {
+        console.error('Alert activation error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to activate alerts",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Alert system activated:', data);
+        toast({
+          title: "Success",
+          description: "Alert system activated! You will receive WhatsApp alerts every 5 minutes.",
+        });
+      }
+    } catch (error) {
+      console.error('Error activating alerts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate alert system",
+        variant: "destructive",
+      });
+    } finally {
+      setTestMessageLoading(false);
+    }
+  };
+
   if (!profile) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
@@ -624,19 +669,41 @@ const Settings = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>WhatsApp Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive notifications via WhatsApp</p>
-                  </div>
-                  <Switch
-                    checked={notifications.whatsapp}
-                    onCheckedChange={handleWhatsAppToggle}
-                  />
-                </div>
-              </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <Label>WhatsApp Notifications</Label>
+                     <p className="text-sm text-muted-foreground">Receive notifications via WhatsApp</p>
+                   </div>
+                   <Switch
+                     checked={notifications.whatsapp}
+                     onCheckedChange={handleWhatsAppToggle}
+                   />
+                 </div>
+               </div>
 
-            </CardContent>
+               <div className="pt-4 border-t">
+                 <div className="flex flex-col gap-3">
+                   <Button
+                     onClick={sendTestHelloMessage}
+                     disabled={testMessageLoading || !profileData.phone}
+                     variant="outline"
+                     className="w-full"
+                   >
+                     {testMessageLoading ? "Sending..." : "Send Test Message"}
+                   </Button>
+                   
+                   <Button
+                     onClick={activateAlert}
+                     disabled={testMessageLoading || !profileData.phone}
+                     variant="default"
+                     className="w-full"
+                   >
+                     {testMessageLoading ? "Activating..." : "Activate Alert"}
+                   </Button>
+                 </div>
+               </div>
+
+             </CardContent>
           </Card>
 )}
 
