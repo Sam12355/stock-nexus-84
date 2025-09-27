@@ -59,16 +59,16 @@ const ActivityLogs = () => {
       if (itemsError) throw itemsError;
       const itemMap = new Map<string, string>((itemsData || []).map(i => [i.id, i.name]));
 
-      // Fetch profiles for updated_by users
-      const userIds = Array.from(new Set(movements.map(m => m.updated_by).filter(Boolean)));
+      // Fetch profiles for updated_by users - using profile id instead of user_id
+      const profileIds = Array.from(new Set(movements.map(m => m.updated_by).filter(Boolean)));
       let profileMap = new Map<string, string>();
-      if (userIds.length) {
+      if (profileIds.length) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, name')
-          .in('user_id', userIds);
+          .select('id, name')
+          .in('id', profileIds);
         if (profilesError) throw profilesError;
-        profileMap = new Map<string, string>((profilesData || []).map(p => [p.user_id, p.name]));
+        profileMap = new Map<string, string>((profilesData || []).map(p => [p.id, p.name]));
       }
 
       // Build movement activities - for admin show all, for others filter by branch
@@ -85,52 +85,27 @@ const ActivityLogs = () => {
           details: movement.reason || `${movement.movement_type === 'in' ? 'Added' : 'Removed'} ${movement.quantity} units of ${itemMap.get(movement.item_id) || 'Unknown Item'}`
         }));
 
-      // Fetch general activity logs - for admin get all, for others filter by branch
-      let activityQuery = supabase
+      // Fetch general activity logs - now using new RLS policies
+      const { data: activityData, error: activityError } = await supabase
         .from('activity_logs')
-        .select('id, action, created_at, details, user_id')
+        .select(`
+          id, 
+          action, 
+          created_at, 
+          details, 
+          user_id,
+          profiles!inner(name)
+        `)
         .order('created_at', { ascending: false })
         .limit(50);
       
-      if (!isAdmin && branchId) {
-        activityQuery = activityQuery.eq('branch_id', branchId);
-      }
-      
-      const { data: activityData, error: activityError } = await activityQuery;
       if (activityError) {
         console.warn('activity_logs not accessible:', activityError);
       }
 
-      // Map user names for activity logs
-      let activityUserMap = profileMap;
-      if (activityData && activityData.length) {
-        const activityUserIds = Array.from(new Set(activityData.map((a: any) => a.user_id).filter(Boolean)));
-        const missing = activityUserIds.filter((id: string) => !activityUserMap.has(id));
-        if (missing.length) {
-          const { data: moreProfiles } = await supabase
-            .from('profiles')
-            .select('user_id, name')
-            .in('user_id', missing);
-          if (moreProfiles) {
-            moreProfiles.forEach((p: any) => activityUserMap.set(p.user_id, p.name));
-          }
-        }
-      }
-
-      // Get all items for name resolution in general activities
-      let allItemsQuery = supabase
-        .from('items')
-        .select('id, name');
-      
-      if (!isAdmin && branchId) {
-        allItemsQuery = allItemsQuery.eq('branch_id', branchId);
-      }
-      
-      const { data: allItems } = await allItemsQuery;
-      const allItemsMap = new Map<string, string>((allItems || []).map(i => [i.id, i.name]));
-
-      const generalActivities: ActivityLog[] = (activityData || []).map(log => {
-        const userName = (log.user_id && activityUserMap.get(log.user_id)) || 'System';
+      // Process activity logs with proper user names
+      const generalActivities: ActivityLog[] = (activityData || []).map((log: any) => {
+        const userName = log.profiles?.name || 'System';
         let friendlyAction = log.action;
         let friendlyDetails = '';
         let activityType = 'system';
@@ -161,15 +136,13 @@ const ActivityLogs = () => {
             activityType = 'item_created';
             break;
           case 'item_updated':
-            const itemName = allItemsMap.get(parsedDetails.item_id) || parsedDetails.name || 'Unknown Item';
             friendlyAction = 'Item updated';
-            friendlyDetails = `${userName} updated item: ${itemName}`;
+            friendlyDetails = `${userName} updated item: ${parsedDetails.name || 'Unknown Item'}`;
             activityType = 'item_updated';
             break;
           case 'item_deleted':
-            const deletedItemName = allItemsMap.get(parsedDetails.item_id) || 'Unknown Item';
             friendlyAction = 'Item removed';
-            friendlyDetails = `${userName} removed item: ${deletedItemName}`;
+            friendlyDetails = `${userName} removed item: ${parsedDetails.name || 'Unknown Item'}`;
             activityType = 'item_deleted';
             break;
           case 'staff_created':
