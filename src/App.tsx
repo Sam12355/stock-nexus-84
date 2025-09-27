@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminRedirect } from "@/components/AdminRedirect";
+import { AdminAuth } from "@/components/AdminAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -38,7 +39,7 @@ const App = () => (
               <Route path="/regions" element={<DashboardLayout><RegionManagement /></DashboardLayout>} />
               <Route path="/districts" element={<DashboardLayout><DistrictManagement /></DashboardLayout>} />
               <Route path="/branches" element={<DashboardLayout><BranchManagement /></DashboardLayout>} />
-              <Route path="/branch-assignments" element={<DashboardLayout><BranchAssignments /></DashboardLayout>} />
+              <Route path="/branch-assignments" element={<DashboardLayout><AdminAuth><BranchAssignments /></AdminAuth></DashboardLayout>} />
               <Route path="/items" element={<DashboardLayout><Items /></DashboardLayout>} />
               <Route path="/stock" element={<DashboardLayout><Stock /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />

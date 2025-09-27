@@ -197,7 +197,7 @@ const BranchAssignments = () => {
     if (!selectedManager) return [];
 
     if (selectedManager.role === 'regional_manager') {
-      // Find region where this manager is assigned as regional manager
+      // If regional manager is correctly linked via regions table
       const managerRegion = regions.find(region => region.regional_manager_id === selectedManager.id);
       if (managerRegion) {
         return branches.filter(branch => branch.region_id === managerRegion.id);
@@ -207,6 +207,7 @@ const BranchAssignments = () => {
         return branches.filter(branch => branch.region_id === selectedManager.region_id);
       }
     } else if (selectedManager.role === 'district_manager') {
+      // Show all branches within this district
       return branches.filter(branch => branch.district_id === selectedManager.district_id);
     }
 
