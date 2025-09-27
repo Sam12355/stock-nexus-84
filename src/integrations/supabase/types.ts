@@ -216,6 +216,54 @@ export type Database = {
           },
         ]
       }
+      event_alerts: {
+        Row: {
+          alert_date: string
+          alert_time: string
+          branch_id: string
+          created_at: string
+          event_id: string
+          id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          alert_date: string
+          alert_time?: string
+          branch_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          alert_date?: string
+          alert_time?: string
+          branch_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_alerts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           branch_id: string

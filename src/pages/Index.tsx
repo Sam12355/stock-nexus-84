@@ -403,7 +403,7 @@ const Index = () => {
 
       toast({ title: "Event added", description: "Your event has been created." });
 
-      // Send immediate event reminder notification
+      // Send immediate event reminder notification for all event types
       if (newEvent.title && selectedBranchOption?.value) {
         try {
           await supabase.functions.invoke('send-event-reminder', {
@@ -416,6 +416,14 @@ const Index = () => {
               reminderType: 'immediate'
             }
           });
+          
+          // Show additional message for alert type events
+          if (newEvent.event_type === 'alert') {
+            toast({
+              title: "Event Alert Scheduled",
+              description: "WhatsApp notifications will be sent at 8:00 AM on the event date to users with event reminders enabled.",
+            });
+          }
           
           toast({
             title: "Event Created & Notification Sent",
