@@ -128,7 +128,10 @@ const Staff = () => {
   useEffect(() => {
     const userRole = profile?.role as string;
     
-    if (userRole === 'district_manager') {
+    if (userRole === 'admin') {
+      // Admin can assign any branch
+      setFilteredBranches(branches);
+    } else if (userRole === 'district_manager') {
       // District manager can only assign branches in their district
       const userDistrictId = profile?.district_id;
       if (userDistrictId) {
