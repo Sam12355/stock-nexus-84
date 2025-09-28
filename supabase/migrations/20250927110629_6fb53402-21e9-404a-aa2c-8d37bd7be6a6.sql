@@ -1,4 +1,4 @@
--- Create the new cron job for regular alerts every 5 minutes
+//-- Create the new cron job for regular alerts every 5 minutes
 //SELECT cron.schedule(
 //  'send-regular-alerts-every-5-min',
 //  '*/5 * * * *',
