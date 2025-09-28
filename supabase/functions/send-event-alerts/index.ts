@@ -17,8 +17,13 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get Twilio credentials
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886';
+
     console.log('=== CHECKING FOR EVENT ALERTS ===');
-    
+
     // Get current date and time
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -27,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Current date:', currentDate);
     console.log('Current time:', currentTime);
 
-    // Find pending event alerts for today at 7:10 PM
+    // Find pending event alerts for today at 11:30 PM
     const { data: alerts, error: alertsError } = await supabase
       .from('event_alerts')
       .select(`
@@ -46,10 +51,8 @@ const handler = async (req: Request): Promise<Response> => {
         )
       `)
       .eq('alert_date', currentDate)
-      .eq('alert_time', '19:10:00')
-      .eq('status', 'pending')
-      .gte('alert_time', currentTime.substring(0, 5) + ':00') // Check if it's time to send
-      .lte('alert_time', '19:15:00'); // 5-minute window at 7:10 PM
+      .eq('alert_time', '23:30:00')
+      .eq('status', 'pending');
 
     if (alertsError) {
       console.error('Error fetching alerts:', alertsError);
@@ -62,9 +65,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const alert of alerts || []) {
       const { calendar_events: event, branches: branch } = alert;
-      
+
       if (!event || !branch) {
         console.log('Skipping alert - missing event or branch data');
+        continue;
+      }
+
+      // Ensure we are within a five-minute window of the scheduled alert time
+      const [alertHour, alertMinute] = alert.alert_time.split(':').map(Number);
+      const alertMinutesTotal = alertHour * 60 + alertMinute;
+      const nowMinutesTotal = now.getHours() * 60 + now.getMinutes();
+      const minutesDiff = nowMinutesTotal - alertMinutesTotal;
+
+      if (minutesDiff < 0 || minutesDiff > 5) {
+        console.log('Skipping alert - outside of send window', {
+          alertTime: alert.alert_time,
+          minutesDiff,
+        });
         continue;
       }
 
@@ -78,7 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: users, error: usersError } = await supabase
         .from('profiles')
         .select('phone, name, role, notification_settings')
-        .eq('branch_id', branch.id)
+        .or(`branch_id.eq.${branch.id},role.in.(regional_manager,district_manager)`)
         .not('phone', 'is', null);
 
       if (usersError) {
@@ -86,10 +103,25 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Filter users who have event reminders enabled
-      const eligibleUsers = users?.filter(user => 
-        user.notification_settings?.eventReminders === true
-      ) || [];
+      // Filter users who have event reminders enabled and WhatsApp access
+      const eligibleUsers = users?.filter(user => {
+        const userSettings = user.notification_settings || {};
+        const branchWhatsappEnabled = branch.notification_settings?.whatsapp;
+        const userWhatsappEnabled = userSettings.whatsapp;
+        const eventAlertsEnabled = userSettings.eventReminders;
+
+        const whatsappOk = branchWhatsappEnabled || userWhatsappEnabled;
+        const eligibleForAlert = whatsappOk && eventAlertsEnabled;
+
+        console.log(`User ${user.name} eligibility:`, {
+          branchWhatsapp: branchWhatsappEnabled,
+          userWhatsapp: userWhatsappEnabled,
+          eventAlerts: eventAlertsEnabled,
+          eligible: eligibleForAlert,
+        });
+
+        return eligibleForAlert;
+      }) || [];
 
       console.log(`Found ${eligibleUsers.length} eligible users for branch: ${branch.name}`);
 
@@ -110,30 +142,51 @@ Please prepare accordingly.
 
 Sent: ${new Date().toLocaleString()}`;
 
-      const notifications = [];
+      const notifications: Array<Record<string, unknown>> = [];
 
-      // Send WhatsApp notifications to eligible users
+      // Send WhatsApp notifications to eligible users via Twilio
       for (const user of eligibleUsers) {
-        if (!user.phone) continue;
+        if (!user.phone || !TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+          console.warn('Skipping user due to missing phone or Twilio credentials');
+          continue;
+        }
 
         try {
-          const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp-notification', {
-            body: {
-              phoneNumber: user.phone,
-              message: message,
-              type: 'event_alert'
-            }
+          const formattedPhoneNumber = user.phone.startsWith('whatsapp:')
+            ? user.phone
+            : `whatsapp:${user.phone}`;
+
+          const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+          const formData = new URLSearchParams();
+          formData.append('From', TWILIO_WHATSAPP_FROM);
+          formData.append('To', formattedPhoneNumber);
+          formData.append('Body', message);
+
+          const credentials = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
+          console.log(`Sending WhatsApp to ${user.name} (${user.phone})`);
+
+          const twilioResponse = await fetch(twilioUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${credentials}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString(),
           });
 
-          if (whatsappError) {
-            console.error('WhatsApp notification failed for user:', user.name, whatsappError);
-          } else {
-            console.log('WhatsApp notification sent to:', user.name);
+          const twilioResult = await twilioResponse.json();
+
+          if (twilioResponse.ok) {
+            console.log(`WhatsApp sent successfully to ${user.name}:`, twilioResult.sid);
             notifications.push({
               user: user.name,
               phone: user.phone,
-              status: 'sent'
+              status: 'sent',
+              messageSid: twilioResult.sid,
             });
+          } else {
+            console.error('Failed to send WhatsApp for user:', user.name, twilioResult);
           }
         } catch (error) {
           console.error('Error sending WhatsApp to user:', user.name, error);
