@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.event_alerts (
   event_id UUID NOT NULL REFERENCES public.calendar_events(id) ON DELETE CASCADE,
   branch_id UUID NOT NULL REFERENCES public.branches(id) ON DELETE CASCADE,
   alert_date DATE NOT NULL,
-  alert_time TIME NOT NULL DEFAULT '08:00:00',
+  alert_time TIME NOT NULL DEFAULT '24:00:00',
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   sent_at TIMESTAMP WITH TIME ZONE
