@@ -12,7 +12,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('=== DAILY EVENT REMINDERS (2:05 PM) ===');
+    console.log('=== DAILY EVENT REMINDERS STARTING ===');
     console.log('Time:', new Date().toISOString());
 
     // Initialize Supabase client
@@ -36,7 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
     let totalNotificationsSent = 0;
     const remindersSummary = [];
 
-    // Get today's and future events
+    // Get today's and tomorrow's events
     const today = new Date().toISOString().split('T')[0];
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -44,12 +44,12 @@ const handler = async (req: Request): Promise<Response> => {
     for (const branch of branches || []) {
       console.log(`\n--- Processing branch: ${branch.name} ---`);
 
-      // Get today's and future events for this branch
+      // Get today's and tomorrow's events for this branch
       const { data: events, error: eventsError } = await supabase
         .from('calendar_events')
         .select('*')
         .eq('branch_id', branch.id)
-        .gte('event_date', today)
+        .in('event_date', [today, tomorrow])
         .order('event_date', { ascending: true });
 
       if (eventsError) {
@@ -81,48 +81,27 @@ const handler = async (req: Request): Promise<Response> => {
       // Group events by date
       const todayEvents = events.filter(e => e.event_date === today);
       const tomorrowEvents = events.filter(e => e.event_date === tomorrow);
-      const futureEvents = events.filter(e => e.event_date > tomorrow);
 
       // Prepare reminder message
-      let message = `📅 EVENT REMINDERS - ${branch.name}\n\n`;
+      let message = `🏪 **${branch.name}** - Daily Event Reminders\n📅 ${new Date().toLocaleDateString()}\n\n`;
 
       if (todayEvents.length > 0) {
-        message += `🔴 TODAY (${new Date(today).toLocaleDateString()}):\n`;
+        message += `📌 **TODAY'S EVENTS** (${todayEvents.length}):\n`;
         todayEvents.forEach(event => {
-          message += `• ${event.title}\n`;
-          if (event.description) {
-            message += `  ${event.description}\n`;
-          }
+          message += `• ${event.title}${event.description ? ` - ${event.description}` : ''}\n`;
         });
         message += '\n';
       }
 
       if (tomorrowEvents.length > 0) {
-        message += `🟡 TOMORROW (${new Date(tomorrow).toLocaleDateString()}):\n`;
+        message += `🔔 **TOMORROW'S EVENTS** (${tomorrowEvents.length}):\n`;
         tomorrowEvents.forEach(event => {
-          message += `• ${event.title}\n`;
-          if (event.description) {
-            message += `  ${event.description}\n`;
-          }
+          message += `• ${event.title}${event.description ? ` - ${event.description}` : ''}\n`;
         });
         message += '\n';
       }
 
-      if (futureEvents.length > 0) {
-        message += `📆 UPCOMING EVENTS:\n`;
-        futureEvents.slice(0, 5).forEach(event => {
-          const eventDate = new Date(event.event_date).toLocaleDateString();
-          message += `• ${event.title} - ${eventDate}\n`;
-        });
-        if (futureEvents.length > 5) {
-          message += `• ... and ${futureEvents.length - 5} more events\n`;
-        }
-        message += '\n';
-      }
-
-      message += `⏰ Daily reminders at 2:05 PM until event days pass.\n`;
-      message += `📅 Reminder sent: ${new Date().toLocaleDateString()}\n\n`;
-      message += `LBD Hospitals Event System`;
+      message += '_Daily Event Reminder - Sushi Yama Inventory System_';
 
       // Filter users who have WhatsApp and Event Reminders enabled
       const eligibleUsers = users?.filter(user => {
@@ -138,12 +117,11 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Eligible users for daily event reminders: ${eligibleUsers.length}`);
 
-      // Send notifications to eligible users (WhatsApp and Email)
+      // Send WhatsApp notifications to eligible users
       for (const user of eligibleUsers || []) {
         if (!user.phone) continue;
 
         try {
-          // Send WhatsApp notification
           const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp-notification', {
             body: {
               phoneNumber: user.phone,
@@ -152,28 +130,6 @@ const handler = async (req: Request): Promise<Response> => {
             }
           });
 
-          // Send Email notification if user has email notifications enabled
-          const userSettings = user.notification_settings || {};
-          if (userSettings.email && user.email) {
-            const emailSubject = `Event Reminders - ${branch.name}`;
-            const emailBody = message.replace(/\n/g, '<br>');
-            
-            const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
-              body: {
-                to: user.email,
-                subject: emailSubject,
-                body: emailBody,
-                type: 'html'
-              }
-            });
-
-            if (emailError) {
-              console.error(`Email failed for ${user.name}:`, emailError);
-            } else {
-              console.log(`Email sent to ${user.name} (${user.email})`);
-            }
-          }
-
           if (whatsappError) {
             console.error(`WhatsApp failed for ${user.name}:`, whatsappError);
           } else {
@@ -181,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
             totalNotificationsSent++;
           }
         } catch (error) {
-          console.error(`Error sending notifications to ${user.name}:`, error);
+          console.error(`Error sending WhatsApp to ${user.name}:`, error);
         }
       }
 

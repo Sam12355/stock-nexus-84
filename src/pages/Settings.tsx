@@ -478,6 +478,63 @@ const Settings = () => {
     }
   };
 
+  // Activate alert system
+  const activateAlert = async () => {
+    if (!profileData.phone || profileData.phone.trim() === "") {
+      toast({
+        title: "Error",
+        description: "Please add a phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestMessageLoading(true);
+    try {
+      // Send immediate alert message
+      const alertMessage = `🚨 ALERT SYSTEM ACTIVATED!
+
+📱 Your WhatsApp alert system is now active.
+⏰ You will receive automated alerts every 5 minutes.
+🏪 Branch: ${branch?.name || 'Your Branch'}
+
+This is your first alert. The next one will arrive in 5 minutes.
+
+Activated: ${new Date().toLocaleString()}`;
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
+        body: {
+          phoneNumber: profileData.phone,
+          message: alertMessage,
+          type: 'whatsapp'
+        }
+      });
+
+      if (error) {
+        console.error('Alert activation error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to activate alerts",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Alert system activated:', data);
+        toast({
+          title: "Success",
+          description: "Alert system activated! First alert sent, automated alerts will follow every 5 minutes.",
+        });
+      }
+    } catch (error) {
+      console.error('Error activating alerts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate alert system",
+        variant: "destructive",
+      });
+    } finally {
+      setTestMessageLoading(false);
+    }
+  };
 
   if (!profile) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -637,18 +694,27 @@ const Settings = () => {
                  </div>
                </div>
 
-                <div className="pt-4 border-t">
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      onClick={sendTestHelloMessage}
-                      disabled={testMessageLoading || !profileData.phone}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      {testMessageLoading ? "Sending..." : "Send Test Message"}
-                    </Button>
-                  </div>
-                </div>
+               <div className="pt-4 border-t">
+                 <div className="flex flex-col gap-3">
+                   <Button
+                     onClick={sendTestHelloMessage}
+                     disabled={testMessageLoading || !profileData.phone}
+                     variant="outline"
+                     className="w-full"
+                   >
+                     {testMessageLoading ? "Sending..." : "Send Test Message"}
+                   </Button>
+                   
+                   <Button
+                     onClick={activateAlert}
+                     disabled={testMessageLoading || !profileData.phone}
+                     variant="default"
+                     className="w-full"
+                   >
+                     {testMessageLoading ? "Activating..." : "Activate Alert"}
+                   </Button>
+                 </div>
+               </div>
 
              </CardContent>
           </Card>

@@ -12,7 +12,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('=== DAILY STOCK ALERTS (2:00 PM) ===');
+    console.log('=== DAILY STOCK ALERTS STARTING ===');
     console.log('Time:', new Date().toISOString());
 
     // Initialize Supabase client
@@ -97,26 +97,24 @@ const handler = async (req: Request): Promise<Response> => {
         return currentQty > threshold * 0.5 && currentQty <= threshold;
       });
 
-      const message = `🏥 STOCK ALERT - ${branch.name}
-
+      const message = `🏪 **${branch.name}** - Daily Stock Report
 📅 ${new Date().toLocaleDateString()}
-⏰ Daily alerts at 2:00 PM until stock is restored
 
-${criticalItems.length > 0 ? `🔴 CRITICAL STOCK (${criticalItems.length} items):
+${criticalItems.length > 0 ? `🚨 **CRITICAL STOCK** (${criticalItems.length} items):
 ${criticalItems.map(item => {
   const qty = item.stock?.[0]?.current_quantity || 0;
-  return `• ${item.name}: ${qty} units (Critical)`;
+  return `• ${item.name}: ${qty}/${item.threshold_level} units`;
 }).join('\n')}
 
-` : ''}${lowItems.length > 0 ? `🟡 LOW STOCK (${lowItems.length} items):
+` : ''}${lowItems.length > 0 ? `⚠️ **LOW STOCK** (${lowItems.length} items):
 ${lowItems.map(item => {
   const qty = item.stock?.[0]?.current_quantity || 0;
-  return `• ${item.name}: ${qty} units (Low)`;
+  return `• ${item.name}: ${qty}/${item.threshold_level} units`;
 }).join('\n')}
 
-` : ''}Please restock these items urgently.
+` : ''}${criticalItems.length > 0 ? '⚡ **Immediate restocking required for critical items!**' : '📈 **Please consider restocking soon.**'}
 
-LBD Hospitals Inventory System`;
+_Daily Stock Alert - Sushi Yama Inventory System_`;
 
       // Filter users who have WhatsApp, Stock Level Alerts, and Event Reminders enabled
       const eligibleUsers = users?.filter(user => {
@@ -132,12 +130,11 @@ LBD Hospitals Inventory System`;
 
       console.log(`Eligible users for daily stock alerts: ${eligibleUsers.length}`);
 
-      // Send notifications to eligible users (WhatsApp and Email)
+      // Send WhatsApp notifications to eligible users
       for (const user of eligibleUsers || []) {
         if (!user.phone) continue;
 
         try {
-          // Send WhatsApp notification
           const { data: whatsappResult, error: whatsappError } = await supabase.functions.invoke('send-whatsapp-notification', {
             body: {
               phoneNumber: user.phone,
@@ -146,28 +143,6 @@ LBD Hospitals Inventory System`;
             }
           });
 
-          // Send Email notification if user has email notifications enabled
-          const userSettings = user.notification_settings || {};
-          if (userSettings.email && user.email) {
-            const emailSubject = `Stock Alert - ${branch.name}`;
-            const emailBody = message.replace(/\n/g, '<br>');
-            
-            const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
-              body: {
-                to: user.email,
-                subject: emailSubject,
-                body: emailBody,
-                type: 'html'
-              }
-            });
-
-            if (emailError) {
-              console.error(`Email failed for ${user.name}:`, emailError);
-            } else {
-              console.log(`Email sent to ${user.name} (${user.email})`);
-            }
-          }
-
           if (whatsappError) {
             console.error(`WhatsApp failed for ${user.name}:`, whatsappError);
           } else {
@@ -175,7 +150,7 @@ LBD Hospitals Inventory System`;
             totalNotificationsSent++;
           }
         } catch (error) {
-          console.error(`Error sending notifications to ${user.name}:`, error);
+          console.error(`Error sending WhatsApp to ${user.name}:`, error);
         }
       }
 
