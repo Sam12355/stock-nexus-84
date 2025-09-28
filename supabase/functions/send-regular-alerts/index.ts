@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const alertMessage = `🔔 REGULAR ALERT
 
-👋 Hi ${user.name}!
+👋 Hi ASs ${user.name}!
 ⏰ Time: ${now.toLocaleString()}
 🏪 Branch: ${user.branches?.name || 'Your Branch'}
 
