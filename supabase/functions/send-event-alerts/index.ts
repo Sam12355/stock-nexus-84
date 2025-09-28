@@ -46,10 +46,10 @@ const handler = async (req: Request): Promise<Response> => {
         )
       `)
       .eq('alert_date', currentDate)
-      .eq('alert_time', '23:40:00')
+      .eq('alert_time', '24:00:00')
       .eq('status', 'pending')
       .gte('alert_time', currentTime.substring(0, 5) + ':00') // Check if it's time to send
-      .lte('alert_time', '23:45:00'); // 5-minute window
+      .lte('alert_time', '24:00:00'); // 5-minute window
 
     if (alertsError) {
       console.error('Error fetching alerts:', alertsError);
