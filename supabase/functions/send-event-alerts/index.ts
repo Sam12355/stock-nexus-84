@@ -32,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Current date:', currentDate);
     console.log('Current time:', currentTime);
 
-    // Find pending event alerts for today at 11:30 PM
+    // Find pending event alerts for today at 7:05 PM
     const { data: alerts, error: alertsError } = await supabase
       .from('event_alerts')
       .select(`
@@ -51,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
         )
       `)
       .eq('alert_date', currentDate)
-      .eq('alert_time', '23:30:00')
+      .eq('alert_time', '19:05:00')
       .eq('status', 'pending');
 
     if (alertsError) {
