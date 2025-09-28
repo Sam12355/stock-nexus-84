@@ -1,7 +1,7 @@
 -- Create a cron job to check for event alerts every morning at 8:00 AM
 SELECT cron.schedule(
   'daily-event-alerts',
-  '0 19 * * *', -- Daily at 8:00 AM
+  '0 8 * * *', -- Daily at 8:00 AM
   $$
   SELECT net.http_post(
     url := 'https://cttkveosybpyqlezenfc.supabase.co/functions/v1/send-event-alerts',
